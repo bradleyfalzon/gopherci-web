@@ -1,0 +1,223 @@
+{{ template "header" . }}
+
+
+<section class="hero is-info is-primary">
+	<div class="hero-body">
+		<div class="container">
+			<h1 class="title">GopherCI</h1>
+			<p class="subtitle">GopherCI helps you maintain high-quality projects, by running a comprehensive suite of open source tools against each GitHub Pull Request, and posts code comments for any issues found.</p>
+			<p class="subtitle">We're a community focused project, free and open source, and provides affordable shared instances for widespread use.</p>
+            <p>
+                <a class="button is-large github" href="#">
+                    <span class="icon"><i class="fa fa-github"></i></span>
+                    <span>Log in with GitHub</span>
+                </a>
+            </p>
+    </div>
+  </div>
+</section>
+
+<section class="section features container">
+	<h2 class="title">Overview</h2>
+	<h2 class="subtitle">We aspire to write maintainable, error free, systems. GopherCI helps to ensure changes to your projects are automatically checked for issues across all your repositories without per-project configuration.</h2>
+
+	<div class="columns">
+		<div class="column">
+			<div class="card">
+				<header class="card-header"><h4 class="card-header-title">API Compatibility Checking</h4></header>
+				<p class="card-content"><a href="https://github.com/bradleyfalzon/gopher">apicompat</a> is a tool to check for the introduction of backwards incompatible changes.</p>
+				<p class="card-content">When enabled, apicompat checks will help highlight API breaking changes before a change is merged.</p>
+			</div>
+		</div>
+		<div class="column">
+			<div class="card">
+				<header class="card-header"><h4 class="card-header-title">AGPL License</h4></header>
+				<p class="card-content">GopherCI source code is available on <a href="https://github.com/bradleyfalzon/gopherci">GitHub</a> for use by anyone who agrees to the <a href="https://github.com/bradleyfalzon/gopherci/blob/master/LICENSE">Affero GPL</a> terms.</p>
+				<p class="card-content">Other subprojects of GopherCI, such as <a href="https://github.com/bradleyfalzon/revgrep">revgrep</a> and <a href="https://github.com/bradleyfalzon/apicompat">apicompat</a>, are released under their own licenses.</p>
+			</div>
+		</div>
+		<div class="column">
+			<div class="card">
+				<header class="card-header"><h4 class="card-header-title">Hosted or Host Your Own</h4></header>
+				<p class="card-content">If you choose, you can run your own instance of GopherCI, as we recognise hosted solutions aren't always the right solution.</p>
+				<p class="card-content">With longer term planned support for GitLab, this will help organisations run GopherCI behind their firewalls.</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="columns">
+		<div class="column">
+			<div class="card">
+				<header class="card-header"><h4 class="card-header-title">GitHub Integrations</h4></header>
+				<p class="card-content">Using the GitHub Integrations API (new in 2016), you have fine-grained control over which repositories GopherCI can view.</p>
+				<p class="card-content">GopherCI comments inline when detecting issues in new PRs. This integration ensures your contributors maintain the same quality you do, and they can make the recommended changes immediately.</p>
+			</div>
+		</div>
+
+		<div class="column">
+			<div class="card">
+				<header class="card-header"><h4 class="card-header-title">Break a Build or Just Comment (planned)</h4></header>
+				<p class="card-content">Some tools should break a build, but some maybe acceptable, you can configure this behaviour per repository and/or per tool.</p>
+				<p class="card-content">So when a Go Vet detects an issue, it's very likely to be a bug, but golint maybe just a stylistic choice that's maybe ignored.</p>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="hero is-medium is-dark is-bold">
+	<div class="hero-body">
+		<div class="container">
+			<p class="title">Special Thanks To</p>
+			<p class="subtitle">GopherCI would like to thank the Go team, all contributors, humans on Gopher Slack and the people behind the static analysis checkers and related tooling.</p>
+			<p class="subtitle">With you, The Go Programming Language is a production ready, safe, fun and reliable platform to develop applications.</p>
+		</div>
+	</div>
+</section>
+
+<section class="section container features">
+	<h2 class="title">Static Analysis and Other Checks</h2>
+	<p class="subtitle">Designed to run popular static analysis tools that are often run in your editor or IDE, GopherCI helps centralise these checks to ensure all contributors follow the same guidelines your projects require, and doesn't require per project configuration, so all projects are covered.</p>
+
+	<div class="columns">
+		<div class="column">
+			<div class="card">
+                <header class="card-header"><h4 class="card-header-title">API Compatibility Checking</h4></header>
+				<p class="card-content">apicompat detect breaking API changes, so everyone is aware.</p>
+				<p class="card-content">This helps to manage Semantic Versioning and keeps out accidental breaking changes.</p>
+                <p class="card-content">See <a href="https://github.com/bradleyfalzon/gopher">apicompat</a>.</p>
+			</div>
+		</div>
+		<div class="column">
+			<div class="card">
+                <header class="card-header"><h4 class="card-header-title">Go Vet</h4></header>
+				<p class="card-content">Detect potential bugs such as copying locks, formatting directives in Println and more with Go Vet.</p>
+				<p class="card-content">Issues detected by Go Vet are likely bugs, and should be reviewed.</p>
+                <p class="card-content">See <a href="https://golang.org/cmd/vet/">Vet</a>.</p>
+			</div>
+		</div>
+		<div class="column">
+			<div class="card">
+                <header class="card-header"><h4 class="card-header-title">Golint</h4></header>
+				<p class="card-content">Golint suggests stylistic issues such as missing documentation for exported items and consistent naming such as ID instead of Id.</p>
+				<p class="card-content">Pay attention the the recommendations, but they're not bugs.</p>
+                <p class="card-content">See <a href="https://github.com/golang/lint">golint</a>.</p>
+			</div>
+		</div>
+		<div class="column">
+			<div class="card">
+                <header class="card-header"><h4 class="card-header-title">Staticcheck (planned)</h4></header>
+                <p class="card-content">Staticcheck, by <a href="https://dominik.honnef.co/">Dominik Honnef</a>, provides advanced static analysis of common but critical bugs.</p>
+                <p class="card-content">With near zero false positives, any issues found are almost certainly critical.</p>
+                <p class="card-content">See <a href="https://github.com/dominikh/go-staticcheck">Staticcheck</a>.</p>
+			</div>
+		</div>
+    </div>
+	<div class="columns">
+		<div class="column">
+			<div class="card">
+                <header class="card-header"><h4 class="card-header-title">Gosimple (planned)</h4></header>
+				<p class="card-content">Also by Dominik Honnef, Gosimple helps you simplify your code by suggesting simpler alternatives.</p>
+				<p class="card-content">They're not bugs, but they help to remove unneccesary complications.</p>
+                <p class="card-content">See <a href="https://github.com/dominikh/go-simple">Gosimple</a>.</p>
+			</div>
+		</div>
+		<div class="column">
+			<div class="card">
+                <header class="card-header"><h4 class="card-header-title">Run Tests (planned)</h4></header>
+				<p class="card-content">Ensure all your tests run, with the race detector without any per project configuration.</p>
+				<p class="card-content">A simple check, but reliefs you the burden of configuring every project's CI to also run the tests.</p>
+			</div>
+		</div>
+		<div class="column">
+			<div class="card">
+                <header class="card-header"><h4 class="card-header-title">Gofmt (planned)</h4></header>
+				<p class="card-content">This check is to simply ensure the contribution has been ran through the gofmt utility.</p>
+				<p class="card-content">Gofmt ensures contributors format their code, so the next Gofmt won't affect recently, unformatted, code.</p>
+			</div>
+		</div>
+		<div class="column">
+			<div class="card">
+                <header class="card-header"><h4 class="card-header-title">...and more are planned</h4></header>
+				<p class="card-content">Encorporated here are the initial static analysis checks and other tools, but there's more available.</p>
+				<p class="card-content">Not all checks are applicable, and some may require customisation, additional changes are planned.</p>
+			</div>
+		</div>
+	</div>
+
+</section>
+
+<section class="hero is-warning">
+    <div class="hero-body">
+        <div class="container">
+            <h2 class="title">Important Notes</h2>
+            <div class="content">
+                <ul>
+                    <li>GopherCI is in very early development and should be used with care, however, the worst that will likely happen could be a lot of useless comments, in which case you simply revoke permissions.</li>
+                    <li>GopherCI is designed to run alongside your existing CI, focusing on static analysis tools, if you have even a slightly complicated build process, some or all checks may not be suitable for you.</li>
+                    <li>Organisations are currently untested.</li>
+                    <li>Private repos are currently unsupported, see <a href="https://github.com/bradleyfalzon/gopherci/issues/22">#22</a>.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section container">
+	<h2 class="title">Pricing</h2>
+	<p class="subtitle">GopherCI aims to provide an affordable tool to reach as many users as possible.</p>
+	<p>For that reason, we provide three plans, the primary differentiator is the run time which directly translates to our running costs.</p>
+
+	<table class="table is-striped pricing">
+    <thead>
+        <tr>
+            <th></th>
+            <th width="30%">Starving Hacker</th>
+            <th width="30%">Professional</th>
+            <th width="30%">Significant Contributor</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td></td>
+            <td>For those that cannot afford the professional plan. We've all been there, continue to use GopherCI and upgrade your plan when you can.</td>
+            <td>You're a professional and want to ensure all your Go code, and the contributions you accept, follow the same high standard across all your repositories.</td>
+            <td>Get a shoutout on our home page, you're a significant contributor to the project, have significantly larger requirements and help continue to fund the project's development.</td>
+        </tr>
+        <tr>
+            <td>Price (US Dollar)</td>
+            <td>$4/month</td>
+            <td>$10/month</td>
+            <td>$50/month</td>
+        </tr>
+        <tr>
+            <td>Repositories</td>
+            <td>Unlimited</td>
+            <td>Unlimited</td>
+            <td>Unlimited</td>
+        </tr>
+        <tr>
+            <td>Minutes run time per month</td>
+            <td>360 (six hours)</td>
+            <td>1,400 (one day)</td>
+            <td>10,080 (seven days)</td>
+        </tr>
+    </tbody>
+
+	</table>
+
+	<article class="message is-danger">
+		<div class="message-header">Danger: Pricing has no basis on reality</div>
+		<div class="message-body">Pricing is currently indicitive and will be reviewed to ensure running costs and some development costs can be recovered. It's critical that GopherCI is sustainable and therefore pricing will be reviewed.</div>
+	</article>
+</section>
+
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <h2 class="title">Early Access</h2>
+            <div class="subtitle">GopherCI is still in alpha quality, we need you to help drive feature development, feel free to check out the <a href="https://github.com/bradleyfalzon/gopherci/issues">issues</a> for planned features and known issues.</div>
+        </div>
+    </div>
+</section>
+
+{{ template "footer" . }}
