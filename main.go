@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/bradleyfalzon/gopherci-web/internal/github"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -60,7 +61,7 @@ func main() {
 		log.Fatal(errors.Wrap(err, "could not execute all migrations"))
 	}
 
-	// initialise html templates
+	// Initialise html templates
 	log.Println("Parsing templates...")
 	if templates, err = template.ParseGlob("templates/*.tmpl"); err != nil {
 		log.Fatalf("could not parse html templates: %s", err)
@@ -74,6 +75,17 @@ func main() {
 	// TODO panic handler?
 	h := handlers.CombinedLoggingHandler(os.Stdout, r)
 	h = handlers.CompressHandler(h)
+
+	// Initialise GitHub
+	switch {
+	case os.Getenv("GITHUB_OAUTH_CLIENT_ID") == "":
+		log.Fatal("GITHUB_OAUTH_CLIENT_ID is not set")
+	case os.Getenv("GITHUB_OAUTH_CLIENT_SECRET") == "":
+		log.Fatal("GITHUB_OAUTH_CLIENT_SECRET is not set")
+	}
+	gh := github.New(os.Getenv("GITHUB_OAUTH_CLIENT_ID"), os.Getenv("GITHUB_OAUTH_CLIENT_SECRET"))
+	r.HandleFunc("/gh/login", gh.OAuthLoginHandler)
+	r.HandleFunc("/gh/callback", gh.OAuthCallbackHandler)
 
 	log.Println("Listening on", listen)
 	log.Fatal(http.ListenAndServe(listen, h))
