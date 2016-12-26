@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/bradleyfalzon/gopherci-web/internal/github"
 	_ "github.com/go-sql-driver/mysql"
@@ -69,7 +68,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
-	r.HandleFunc("/", homeHandler)
+	r.Handle("/", appHandler(homeHandler))
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
 
 	// TODO panic handler?
@@ -84,42 +83,10 @@ func main() {
 		log.Fatal("GITHUB_OAUTH_CLIENT_SECRET is not set")
 	}
 	gh := github.New(os.Getenv("GITHUB_OAUTH_CLIENT_ID"), os.Getenv("GITHUB_OAUTH_CLIENT_SECRET"))
-	r.HandleFunc("/gh/login", gh.OAuthLoginHandler)
-	r.HandleFunc("/gh/callback", gh.OAuthCallbackHandler)
+	r.Handle("/gh/login", appHandler(gh.OAuthLoginHandler))
+	r.Handle("/gh/callback", appHandler(gh.OAuthCallbackHandler))
 
 	log.Println("Listening on", listen)
 	log.Fatal(http.ListenAndServe(listen, h))
 
-}
-
-// homeHandler displays the home page
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-	page := struct {
-		Title string
-	}{"GopherCI"}
-
-	if err := templates.ExecuteTemplate(w, "home.tmpl", page); err != nil {
-		log.Println("error parsing home template:", err)
-	}
-}
-
-// notFoundHandler displays a 404 not found error
-func notFoundHandler(w http.ResponseWriter, r *http.Request) {
-	errorHandler(w, r, http.StatusNotFound, "")
-}
-
-// errorHandler handles an error message, with an optional description
-func errorHandler(w http.ResponseWriter, r *http.Request, code int, desc string) {
-	page := struct {
-		Title  string
-		Code   string // eg 400
-		Status string // eg Bad Request
-		Desc   string // eg Missing key foo
-	}{fmt.Sprintf("%d - %s", code, http.StatusText(code)), strconv.Itoa(code), http.StatusText(code), desc}
-
-	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(code)
-	if err := templates.ExecuteTemplate(w, "error.tmpl", page); err != nil {
-		log.Println("error parsing error template:", err)
-	}
 }

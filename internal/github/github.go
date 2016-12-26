@@ -31,19 +31,20 @@ const xTODOFIXME = "TODOFIXME"
 
 // OAuthLoginHandler starts the initial oauth login flow by redirecting the
 // user to GitHub for authentication and authorisation our app.
-func (g *GitHub) OAuthLoginHandler(w http.ResponseWriter, r *http.Request) {
+func (g *GitHub) OAuthLoginHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 	url := g.oauthConf.AuthCodeURL(xTODOFIXME, oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	return 0, nil
 }
 
 // OAuthCallbackHandler handles the callback after GitHub authentication and
 // persists the credentials to storage for use later.
-func (g *GitHub) OAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
+func (g *GitHub) OAuthCallbackHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 	state := r.FormValue("state")
 	if state != xTODOFIXME {
 		log.Printf("github: invalid oauth state, have %q, want %q", xTODOFIXME, state)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		return
+		return 0, nil
 	}
 
 	code := r.FormValue("code")
@@ -51,7 +52,7 @@ func (g *GitHub) OAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("github: oauthConf exchange() error:", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		return
+		return 0, nil
 	}
 
 	oauthClient := g.oauthConf.Client(oauth2.NoContext, token)
@@ -60,8 +61,9 @@ func (g *GitHub) OAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("github: could not get user:", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		return
+		return 0, nil
 	}
 	fmt.Printf("Logged in as GitHub user: %s\n", *user.Login)
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	return 0, nil
 }
