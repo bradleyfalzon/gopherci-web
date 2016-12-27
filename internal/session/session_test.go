@@ -241,12 +241,11 @@ func TestSave_noChanges(t *testing.T) {
 	const sid = "7a6e02a0-5ef8-43f9-95f5-2708863cc753"
 
 	s := &Session{
-		db:       nil, // panic if this is used
-		id:       uuid.Must(uuid.Parse(sid)),
-		json:     []byte(`{"GitHubID":1}`),
-		expires:  time.Unix(1, 1),
-		GitHubID: 1, // no changes
+		db:      nil, // panic if this is used
+		id:      uuid.Must(uuid.Parse(sid)),
+		expires: time.Unix(1, 1),
 	}
+	s.json, _ = json.Marshal(s)
 
 	err := s.Save()
 	if err != nil {

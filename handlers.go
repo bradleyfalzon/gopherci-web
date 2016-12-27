@@ -10,8 +10,6 @@ import (
 	"github.com/bradleyfalzon/gopherci-web/internal/session"
 )
 
-type sessionCtxKey struct{} // key for session context
-
 type appError struct {
 	Error   error  // Message to log
 	Message string // Message to show user (longer)
@@ -29,13 +27,13 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 
 	// Get Session and store in request's context
-	session, err := session.GetOrCreate(db, w, r)
+	s, err := session.GetOrCreate(db, w, r)
 	if err != nil {
 		log.Println("error: could not initialise session:", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	r = r.WithContext(context.WithValue(r.Context(), sessionCtxKey{}, session))
+	r = r.WithContext(context.WithValue(r.Context(), session.CtxKey{}, s))
 
 	// Execute handler
 	if code, err := fn(w, r); err != nil {
@@ -43,7 +41,7 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Save session even if errors occured
-	if err := session.Save(); err != nil {
+	if err := s.Save(); err != nil {
 		log.Println("appHandler: could not save session:", err)
 	}
 }
