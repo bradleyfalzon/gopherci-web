@@ -33,7 +33,8 @@ type Session struct {
 	expires time.Time // time session should expire, only set on new sessions
 	json    []byte    // json session from db, used to check if changes made
 
-	GitHubID         int       // user's GitHub ID
+	UserID           int       // Our User ID
+	GitHubID         int       // User's GitHub ID
 	GitHubOAuthState uuid.UUID // State/CSRF token when using GitHub OAuth flow
 }
 
