@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/bradleyfalzon/gopherci-web/internal/github"
+	"github.com/bradleyfalzon/gopherci-web/internal/users"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -66,6 +67,9 @@ func main() {
 		log.Fatalf("could not parse html templates: %s", err)
 	}
 
+	// UserManager
+	um := users.NewUserManager(db)
+
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	r.Handle("/", appHandler(homeHandler))
@@ -82,7 +86,7 @@ func main() {
 	case os.Getenv("GITHUB_OAUTH_CLIENT_SECRET") == "":
 		log.Fatal("GITHUB_OAUTH_CLIENT_SECRET is not set")
 	}
-	gh := github.New(os.Getenv("GITHUB_OAUTH_CLIENT_ID"), os.Getenv("GITHUB_OAUTH_CLIENT_SECRET"))
+	gh := github.New(os.Getenv("GITHUB_OAUTH_CLIENT_ID"), os.Getenv("GITHUB_OAUTH_CLIENT_SECRET"), um)
 	r.Handle("/gh/login", appHandler(gh.OAuthLoginHandler))
 	r.Handle("/gh/callback", appHandler(gh.OAuthCallbackHandler))
 

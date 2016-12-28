@@ -21,6 +21,9 @@ const (
 	cookieHTTPOnly        = true
 )
 
+// CtxKey is the key to use when storing session in a Context
+type CtxKey struct{}
+
 // Session represents a user's session and contains all their data. This is
 // marshalled into a []byte storage using json, so some restrictions such as
 // only exported members are saved apply.
@@ -30,7 +33,9 @@ type Session struct {
 	expires time.Time // time session should expire, only set on new sessions
 	json    []byte    // json session from db, used to check if changes made
 
-	GitHubID int // user's GitHub ID
+	UserID           int       // Our User ID
+	GitHubID         int       // User's GitHub ID
+	GitHubOAuthState uuid.UUID // State/CSRF token when using GitHub OAuth flow
 }
 
 // GetOrCreate reads the http.Request looking for a session ID and attempts to
