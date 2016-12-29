@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -250,5 +251,32 @@ func TestSave_noChanges(t *testing.T) {
 	err := s.Save()
 	if err != nil {
 		t.Fatal("Unexpected error: ", err)
+	}
+}
+
+func TestFromContext(t *testing.T) {
+	want := &Session{UserID: 2}
+	ctx := context.WithValue(context.Background(), CtxKey{}, want)
+	have := FromContext(ctx)
+	if have.UserID != want.UserID {
+		t.Errorf("UserID did not match have %q want %q", have.UserID, want.UserID)
+	}
+}
+
+func TestLoggedIn(t *testing.T) {
+
+	tests := []struct {
+		UserID int
+		want   bool
+	}{
+		{1, true},
+		{0, false},
+	}
+
+	for _, test := range tests {
+		s := &Session{UserID: test.UserID}
+		if s.LoggedIn() != test.want {
+			t.Errorf("userID %v have %v want %v", test.UserID, s.LoggedIn(), test.want)
+		}
 	}
 }

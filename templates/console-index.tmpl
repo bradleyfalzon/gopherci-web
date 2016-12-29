@@ -1,0 +1,69 @@
+{{ template "header" . }}
+
+<section class="section">
+
+<h1 class="title is-1">GitHub Integrations</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Options</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ range .Installs }}
+        <tr>
+            <td>{{ .Type }}</td>
+            <td><a href="{{ .NameURL }}">{{ .Name }}</a></td>
+            <td>
+                <form method="POST" action="/console/install-state">
+                    <input type="hidden" name="installationID" value="{{ .InstallationID }}">
+                {{ if eq .State "Disabled" }}
+                    <input type="hidden" name="state" value="enable">
+                    <button type="submit" value="enable">Enable</button>
+                {{ else if eq .State "Enabled" }}
+                    {{ if .CanDisable }}
+                        <input type="hidden" name="state" value="disable">
+                        <button type="submit" value="disable">Disable</button>
+                    {{ else }}
+                        <span title="Only the person who enable this can disable">Enabled</span>
+                    {{ end }}
+                {{ else }}
+                    <a href="http://example.com">Install Integration</a>
+                {{ end }}
+            </td>
+        </tr>
+        {{ end }}
+        <tr>
+            <td>Personal</td>
+            <td>github.com/personal</td>
+            <td>No integration installed <a>Install</a></td>
+        </tr>
+        <tr>
+            <td>Organisation</td>
+            <td>github.com/org</td>
+            <td>Not an admin</td>
+        </tr>
+        <tr>
+            <td>Organisation</td>
+            <td>github.com/org</td>
+            <td>Installed <a>Enable</a></td>
+        </tr>
+        <tr>
+            <td>Organisation</td>
+            <td>github.com/org</td>
+            <td>PLAN NAME <a>Disable</a></td>
+        </tr>
+        <tr>
+            <td>Organisation</td>
+            <td>github.com/org</td>
+            <td>PLAN NAME <a>Disable</a></td>
+        </tr>
+    </tbody>
+</table>
+
+</section>
+
+{{ template "footer" . }}

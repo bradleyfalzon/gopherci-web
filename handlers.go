@@ -8,6 +8,8 @@ import (
 	"strconv"
 
 	"github.com/bradleyfalzon/gopherci-web/internal/session"
+	"github.com/google/go-github/github"
+	"github.com/pkg/errors"
 )
 
 type appError struct {
@@ -37,10 +39,14 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Execute handler
 	if code, err := fn(w, r); err != nil {
+		if code >= http.StatusInternalServerError {
+			log.Printf("internal error type %T: %+v", err, err)
+			err = errors.New("Internal error")
+		}
 		errorHandler(w, r, code, err)
 	}
 
-	// Save session even if errors occured
+	// Save session even if errors occurred
 	if err := s.Save(); err != nil {
 		log.Println("appHandler: could not save session:", err)
 	}
@@ -63,6 +69,11 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	errorHandler(w, r, http.StatusNotFound, fmt.Errorf("%v not found", r.URL))
 }
 
+func internalError(w http.ResponseWriter, r *http.Request, err error) {
+	log.Printf("internal error: %+v", err)
+	errorHandler(w, r, http.StatusInternalServerError, errors.New("Internal Error"))
+}
+
 // errorHandler handles an error message, with an optional description
 func errorHandler(w http.ResponseWriter, r *http.Request, code int, err error) {
 	page := struct {
@@ -77,4 +88,176 @@ func errorHandler(w http.ResponseWriter, r *http.Request, code int, err error) {
 	if err := templates.ExecuteTemplate(w, "error.tmpl", page); err != nil {
 		log.Println("error parsing error template:", err)
 	}
+}
+
+// consoleIndex displays the console's index page
+func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+	type install struct {
+		AccountID      int // github accountID, may not be set on orphaned installations
+		InstallationID int
+		Type           string
+		Name           string
+		NameURL        string
+		CanDisable     bool // allows the user to disable the installation
+		State          string
+	}
+	page := struct {
+		Title    string
+		Installs []install
+	}{Title: "Console"}
+
+	// Check if logged in
+	// TODO this should be a part of middleware
+	session := session.FromContext(r.Context())
+	if !session.LoggedIn() {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return 0, nil
+	}
+
+	user, err := um.GetUser(session.UserID)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	ghUser, _, err := user.GHClient.Users.Get("")
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	// Get list of organisations from github api for this user
+	ghMemberships, _, err := user.GHClient.Organizations.ListOrgMemberships(&github.ListOrgMembershipsOptions{State: "active"})
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	ei, err := user.EnabledInstallations()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	enabledInstallations := make(map[int]bool)
+	for _, installationID := range ei {
+		enabledInstallations[installationID] = true
+	}
+
+	// Refactor the following into gciweb package? Yes
+
+	accountIDs := []int{*ghUser.ID}
+	page.Installs = append(page.Installs, install{
+		AccountID:  *ghUser.ID,
+		Type:       "Personal",
+		Name:       *ghUser.Login,
+		NameURL:    *ghUser.HTMLURL,
+		CanDisable: true,
+	})
+
+	for _, m := range ghMemberships {
+		accountIDs = append(accountIDs, *m.Organization.ID)
+
+		install := install{
+			AccountID: *m.Organization.ID,
+			Type:      "Organisation",
+			Name:      *m.Organization.Login,
+			NameURL:   *m.OrganizationURL,
+		}
+
+		page.Installs = append(page.Installs, install)
+	}
+
+	// Check if any installations are pending
+	gciInstalls, err := gciClient.ListInstallations(accountIDs...)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	// Compare User's installations with installations in GopherCI DB
+	for i := range page.Installs {
+		page.Installs[i].State = "New"
+		for _, gciInstall := range gciInstalls {
+			if gciInstall.AccountID != page.Installs[i].AccountID {
+				continue
+			}
+
+			page.Installs[i].InstallationID = gciInstall.InstallationID
+			page.Installs[i].State = "Disabled"
+			if _, ok := enabledInstallations[gciInstall.InstallationID]; ok {
+				page.Installs[i].State = "Enabled"
+
+				// remove installation to track which instalaltions are orphaned
+				delete(enabledInstallations, gciInstall.InstallationID)
+			}
+		}
+	}
+
+	// We also need to track if a user has cancelled a subscription, to disable
+	// all installations.
+
+	// Also need a script to check when an installation has been uninstalled
+	// the installation is disabled for the user.
+
+	// Installs enabled, but user no long has access to (i.e. removed from org)
+	for installationID := range enabledInstallations {
+		// Ideally GitHub would provide an API to get information about an installation
+		// without us having to track it ourselves.
+		page.Installs = append(page.Installs, install{
+			InstallationID: installationID,
+			Type:           "Orphaned",
+			Name:           fmt.Sprintf("Unknown, Installation ID %v", installationID),
+			State:          "Enabled",
+		})
+	}
+
+	if err := templates.ExecuteTemplate(w, "console-index.tmpl", page); err != nil {
+		log.Println("error parsing console-index template:", err)
+	}
+	return http.StatusOK, nil
+}
+
+// consoleInstallStateHandler enables or disabled an installation
+func consoleInstallStateHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+
+	// Check if logged in
+	// TODO this should be a part of middleware (MustBeUser)
+	session := session.FromContext(r.Context())
+	if !session.LoggedIn() {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return 0, nil
+	}
+
+	// TODO maybe this should be handled in MustBeUser handler
+	user, err := um.GetUser(session.UserID)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	r.ParseForm()
+
+	i, err := strconv.ParseInt(r.FormValue("installationID"), 10, 64)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+	installationID := int(i)
+
+	switch r.FormValue("state") {
+	case "enable":
+		err = user.EnableInstallation(installationID)
+		if err == nil {
+			err = gciClient.EnableInstallation(installationID)
+		}
+	case "disable":
+		if !user.InstallationEnabled(installationID) {
+			return http.StatusForbidden, errors.New("Installation not enabled for this user")
+		}
+		err = user.DisableInstallation(installationID)
+		if err == nil {
+			err = gciClient.DisableInstallation(installationID)
+		}
+	default:
+		return http.StatusBadRequest, errors.New("Invalid state")
+	}
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	http.Redirect(w, r, "/console", http.StatusFound)
+	return 0, nil
 }

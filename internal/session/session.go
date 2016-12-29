@@ -2,6 +2,7 @@ package session
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -120,4 +121,14 @@ func (s *Session) Save() error {
 		return errors.Wrap(err, "session: could not save to db")
 	}
 	return nil
+}
+
+// FromContext returns the session from a context.
+func FromContext(ctx context.Context) *Session {
+	return ctx.Value(CtxKey{}).(*Session)
+}
+
+// LoggedIn checks if the user is currently logged in.
+func (s *Session) LoggedIn() bool {
+	return s.UserID != 0
 }
