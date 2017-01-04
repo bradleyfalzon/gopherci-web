@@ -91,6 +91,9 @@ func main() {
 	r.Handle("/", appHandler(homeHandler))
 	r.Handle("/console", appHandler(consoleIndexHandler))
 	r.Handle("/console/install-state", appHandler(consoleInstallStateHandler))
+	r.Handle("/console/payments", appHandler(consolePaymentsHandler))
+	r.Handle("/console/payments/process/{planID}", appHandler(consolePaymentsProcessHandler))
+	r.Handle("/console/payments/cancel", appHandler(consolePaymentsCancelHandler))
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
 
 	// TODO panic handler?
@@ -104,7 +107,7 @@ func main() {
 	case os.Getenv("GITHUB_OAUTH_CLIENT_SECRET") == "":
 		log.Fatal("GITHUB_OAUTH_CLIENT_SECRET is not set")
 	}
-	um = users.NewUserManager(dbx, os.Getenv("GITHUB_OAUTH_CLIENT_ID"), os.Getenv("GITHUB_OAUTH_CLIENT_SECRET"))
+	um = users.NewUserManager(dbx, os.Getenv("GITHUB_OAUTH_CLIENT_ID"), os.Getenv("GITHUB_OAUTH_CLIENT_SECRET"), os.Getenv("STRIPE_SECRET_KEY"))
 	r.Handle("/gh/login", appHandler(um.OAuthLoginHandler))
 	r.Handle("/gh/callback", appHandler(um.OAuthCallbackHandler))
 

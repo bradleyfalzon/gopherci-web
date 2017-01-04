@@ -1,0 +1,132 @@
+{{ template "header" . }}
+
+<section class="section">
+
+<h1 class="title is-1">Payments</h1>
+
+<h2 class="title is-3">Subscriptions</h2>
+
+{{ if not .Subscriptions }}
+    <p class="notification">Choose a plan to view current and previous subscriptions.</p>
+{{ else }}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Amount</th>
+                <th>Start</th>
+                <th>Period End</th>
+                <th>Cancelled</th>
+            </tr>
+        </thead>
+        <tbody>
+        {{ range .Subscriptions }}
+            <tr>
+                <td>{{ .Name }}</td>
+                <td>{{ .AmountDisplay }} per {{ .Interval }}</td>
+                <td>{{ .StartedAt }}</td>
+                <td>{{ .PeriodEndAt }}</td>
+                <td>
+                    {{ if .Ended }}
+                        {{ .CancelledAt }}
+                    {{ else }}
+                        <form method="POST" action="/console/payments/cancel">
+                            <input type="hidden" name="subscriptionID" value="{{ .ID }}">
+                            <button class="button is-danger" type="submit">Cancel</button>
+                        </form>
+                    {{ end }}
+                </td>
+            </tr>
+        {{ end }}
+        </tbody>
+    </table>
+{{ end }}
+
+<h2 class="title is-3">Choose Plan</h2>
+
+{{ if .HasSubscription }}
+    <p class="notification">Cancel a subscription to chose a new plan.</p>
+{{ else }}
+    <table class="table">
+        <thead>
+            <tr><th></th><th>Personal</th><th>Professional</th><th>Significant Contributor</th></tr>
+        </head>
+        <tbody>
+            <tr>
+                <th>Price</th>
+                <td>$AUD 4.99/Month</td>
+                <td>$AUD 7.99/Month</td>
+                <td>$AUD 24.99/Month</td>
+            </tr>
+            <tr>
+                <th>Runtime per Month</th>
+                <td>6 hours</td>
+                <td>1 day</td>
+                <td>7 days</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <th></th>
+                <td>
+                    <form id="" action="/console/payments/process/PersonalMonthly" method="POST">
+                        <script
+                            src="https://checkout.stripe.com/checkout.js" class="stripe-button"
+                            data-amount="499"
+                            data-description="Personal Monthly"
+                            data-name="gopherci.io"
+                            data-key="{{ .StripePublishKey }}"
+                            data-allow-remember-me="false"
+                            data-image="https://stripe.com/img/documentation/checkout/marketplace.png"
+                            data-locale="auto"
+                            data-panel-label="Subscribe"
+                            data-label="Subscribe"
+                            data-email="{{ .Email }}"
+                            data-currency="aud">
+                        </script>
+                    </form>
+                </td>
+                <td>
+                    <form id="" action="/console/payments/process/ProfessionalMonthly" method="POST">
+                        <script
+                            src="https://checkout.stripe.com/checkout.js" class="stripe-button"
+                            data-amount="799"
+                            data-description="Professional Monthly"
+                            data-name="gopherci.io"
+                            data-key="{{ .StripePublishKey }}"
+                            data-allow-remember-me="false"
+                            data-image="https://stripe.com/img/documentation/checkout/marketplace.png"
+                            data-locale="auto"
+                            data-panel-label="Subscribe"
+                            data-label="Subscribe"
+                            data-email="{{ .Email }}"
+                            data-currency="aud">
+                        </script>
+                    </form>
+                </td>
+                <td>
+                    <form id="" action="/console/payments/process/SignificantMonthly" method="POST">
+                        <script
+                            src="https://checkout.stripe.com/checkout.js" class="stripe-button"
+                            data-amount="2499"
+                            data-description="Significant Contributor Monthly"
+                            data-name="gopherci.io"
+                            data-key="{{ .StripePublishKey }}"
+                            data-allow-remember-me="false"
+                            data-image="https://stripe.com/img/documentation/checkout/marketplace.png"
+                            data-locale="auto"
+                            data-panel-label="Subscribe"
+                            data-label="Subscribe"
+                            data-email="{{ .Email }}"
+                            data-currency="aud">
+                        </script>
+                    </form>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+{{ end }}
+
+</section>
+
+{{ template "footer" . }}

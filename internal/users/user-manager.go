@@ -4,6 +4,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/jmoiron/sqlx"
+	stripe "github.com/stripe/stripe-go"
 
 	ghoauth "golang.org/x/oauth2/github"
 )
@@ -17,7 +18,8 @@ type UserManager struct {
 
 // NewUserManager returns a new UserManager initialised with db and GitHub
 // clientID and clientSecret.
-func NewUserManager(db *sqlx.DB, clientID, clientSecret string) *UserManager {
+func NewUserManager(db *sqlx.DB, clientID, clientSecret, stripeKey string) *UserManager {
+	stripe.Key = stripeKey
 	return &UserManager{
 		db: db,
 		oauthConf: &oauth2.Config{

@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/bradleyfalzon/gopherci-web/internal/session"
+	"github.com/bradleyfalzon/gopherci-web/internal/users"
 	"github.com/google/go-github/github"
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
 
@@ -259,5 +262,138 @@ func consoleInstallStateHandler(w http.ResponseWriter, r *http.Request) (int, er
 	}
 
 	http.Redirect(w, r, "/console", http.StatusFound)
+	return 0, nil
+}
+
+// consolePaymentsHandler manages plans.
+func consolePaymentsHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+	page := struct {
+		Title            string
+		Email            string
+		StripePublishKey string
+		Subscriptions    []users.Subscription
+		HasSubscription  bool
+	}{Title: "Payments", StripePublishKey: os.Getenv("STRIPE_PUBLISH_KEY")}
+
+	// Check if logged in
+	// TODO this should be a part of middleware (MustBeUser)
+	session := session.FromContext(r.Context())
+	if !session.LoggedIn() {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return 0, nil
+	}
+
+	// TODO maybe this should be handled in MustBeUser handler
+	user, err := um.GetUser(session.UserID)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	page.Email = user.Email
+
+	page.Subscriptions, err = user.StripeSubscriptions()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	for _, sub := range page.Subscriptions {
+		if sub.CancelledAt.IsZero() {
+			page.HasSubscription = true
+		}
+	}
+
+	if err := templates.ExecuteTemplate(w, "console-payments.tmpl", page); err != nil {
+		log.Println("error parsing console-payments template:", err)
+	}
+	return http.StatusOK, nil
+}
+
+// consolePaymentsProcessHandler processes the results of a payment (not the
+// payment itself).
+func consolePaymentsProcessHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+	vars := mux.Vars(r)
+
+	// Check if logged in
+	// TODO this should be a part of middleware (MustBeUser)
+	session := session.FromContext(r.Context())
+	if !session.LoggedIn() {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return 0, nil
+	}
+
+	// TODO maybe this should be handled in MustBeUser handler
+	user, err := um.GetUser(session.UserID)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	r.ParseForm()
+
+	// Ensure customer does not have any current subscriptions until we have the
+	// ability to prorata subscriptions.
+	subs, err := user.StripeSubscriptions()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	for _, sub := range subs {
+		if sub.CancelledAt.IsZero() {
+			// TODO flash message
+			return http.StatusBadRequest, errors.New("active subscription already exists")
+		}
+	}
+
+	err = user.ProcessStripePayment(r.Form.Get("stripeToken"), vars["planID"])
+	if err != nil {
+		return http.StatusInternalServerError, errors.Wrap(err, "could not process stripe payment")
+	}
+
+	log.Printf("processed stripe subscription for userID %v on plan %v", user.UserID, vars["planID"])
+
+	http.Redirect(w, r, "/console/payments", http.StatusFound)
+	return 0, nil
+}
+
+// consolePaymentsCancelHandler cancels a subscription.
+func consolePaymentsCancelHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+	// Check if logged in
+	// TODO this should be a part of middleware (MustBeUser)
+	session := session.FromContext(r.Context())
+	if !session.LoggedIn() {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return 0, nil
+	}
+
+	// TODO maybe this should be handled in MustBeUser handler
+	user, err := um.GetUser(session.UserID)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	r.ParseForm()
+	subs, err := user.StripeSubscriptions()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	var sub *users.Subscription
+	for _, s := range subs {
+		if s.ID == r.Form.Get("subscriptionID") {
+			sub = &s
+			break
+		}
+	}
+	if sub == nil {
+		// TODO flash message to show user we couldn't find subscription ID
+		return http.StatusBadRequest, errors.New("could not find subscription ID")
+	}
+
+	err = user.CancelStripeSubscription(r.Form.Get("subscriptionID"), true)
+	if err != nil {
+		return http.StatusInternalServerError, errors.Wrap(err, "could not process stripe payment")
+	}
+
+	// TODO disable all integrations at sub.PeriodEnd #7
+
+	log.Printf("cancelled stripe subscription for userID %v subscriptionID %q", user.UserID, r.Form.Get("subscriptionID"))
+
+	http.Redirect(w, r, "/console/payments", http.StatusFound)
 	return 0, nil
 }
