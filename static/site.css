@@ -1,31 +1,130 @@
-
-/* General */
-
-html { font-size: 16px; }
-
-.subtitle { line-height: 1.6em; }
-
-.button.github {
-    background-image: linear-gradient(#91dd70, #55ae2e);
-    border: 1px solid #5aad35;
-    color: white;
+body, html {
+    font-family: Roboto,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    height: 100%;
 }
 
-/* Header */
-
-.nav {
-    background-color: #3273dc;
-    border-width: 0;
-    color: white;
-    border-bottom: 1px solid #eee;
+.header-image {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.49),rgba(0, 0, 0, 0.89)),url('https://images.unsplash.com/photo-1482745637430-91c0bbcea3e1?dpr=1&auto=format&fit=crop&w=2000&h=700&q=80&cs=tinysrgb&crop=');
+  background-size: cover;
+  background-position-y: 50%;
+  background-blend-mode: exclusion;
 }
-a.nav-item { color: white; }
+.hero.is-primary {
+  background-color: #565656;
+}
+.title.is-2 {
+    font-size: 60px;
+}
 
-/* Home Page */
+.hero-cta {
+  padding: 30px 0;
+}
+.panel-block.section p {
+    font-size: 15px;
+    line-height: 1.4;
+    color: #95A5A6;
+    font-weight: 300;
+}
+.section.main {
+  background-color:#F0F0F0;
+}
+.icon-block {
+  font-size:5em;
+}
+h4.panel-header {
+  font-weight: 700;
+  color: #95A5A6;
+  font-size: 1.5em;
+  padding-bottom: 25px;
+}
+.about .panel-block {
+  min-height: 350px;
+}
 
-.pricing th, .pricing td { text-align: center; }
 
-.features .card {
-	width: initial;
-	height: 100%;
+.features .panel-block {
+  min-height: 350px;
+
+    position: relative;
+}
+
+.pad-15-vh {
+  padding-top: 15vh;
+  padding-bottom: 15vh;
+}
+
+.section-alt {
+    background-color: #ffffff;
+    border-top: 1px solid #e6e6e6;
+    border-bottom: 1px solid #e6e6e6;
+  }
+
+.open-source h2.is-header {
+  font-size: 2em;
+  font-weight: 300;
+  color: #95A5A6;
+
+  padding-bottom: 25px;
+}
+
+.features h2.is-header {
+  font-size: 2.5em;
+  font-weight: 300;
+  color: #95A5A6;
+
+  padding-bottom: 35px;
+}
+
+.pricing h2.is-header {
+  font-size: 2.5em;
+  font-weight: 300;
+  color: #95A5A6;
+
+  padding-bottom: 25px;
+}
+
+.pricing .panel {
+  box-shadow: none;
+  border: 1px solid;
+  border-color: #e5e6e9 #dfe0e4 #d0d1d5;
+  padding: 10px 50px 10px 50px;
+  margin: 15px 0;
+  border-radius: 4px;
+}
+
+.panel-heading.plan-price {
+    background-color: transparent;
+    border: none;
+    font-size: 3em;
+}
+
+.panel-heading.plan-price small{
+    font-size: .4em;
+
+}
+.panel-block.plan-name {
+    font-weight: bold;
+    color: #646464;
+
+}
+
+.pricing .plan-details {
+    padding-top: 50px;
+}
+
+.pricing .panel-block {
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.pricing button.button.is-primary {
+    margin-top: 50px;
+}
+
+footer.panel-footer {
+    display: block;
+    position: absolute;
+    bottom: 25px;
+    left: 0;
+    right: 0;
 }
