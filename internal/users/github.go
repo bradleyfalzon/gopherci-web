@@ -32,12 +32,12 @@ func (um *UserManager) OAuthCallbackHandler(w http.ResponseWriter, r *http.Reque
 	session := session.FromContext(r.Context())
 
 	if session.GitHubOAuthState == uuid.Nil {
-		return http.StatusBadRequest, errors.New("github: invalid oauth state is nil")
+		return http.StatusBadRequest, errors.New("github: invalid oauth state from session, it is nil")
 	}
 
 	state := r.FormValue("state")
 	if state != session.GitHubOAuthState.String() {
-		return http.StatusBadRequest, fmt.Errorf("github: invalid oauth state, have %q, want %q", state, session.GitHubOAuthState.String())
+		return http.StatusBadRequest, fmt.Errorf("github: invalid oauth state from session, have %q, want %q", state, session.GitHubOAuthState.String())
 	}
 	session.GitHubOAuthState = uuid.Nil
 
