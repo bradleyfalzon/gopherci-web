@@ -56,6 +56,7 @@ func GetOrCreate(db *sql.DB, w http.ResponseWriter, r *http.Request) (*Session, 
 	// Get session from database
 	var (
 		jsonData []byte // json in db
+		expires  time.Time
 	)
 
 	id, err := uuid.Parse(cookie.Value)
@@ -65,7 +66,7 @@ func GetOrCreate(db *sql.DB, w http.ResponseWriter, r *http.Request) (*Session, 
 	}
 
 	// context ??
-	err = db.QueryRow("SELECT json FROM sessions WHERE id=?", id[:]).Scan(&jsonData)
+	err = db.QueryRow("SELECT json, expires_at FROM sessions WHERE id=?", id[:]).Scan(&jsonData, &expires)
 	switch {
 	case err == sql.ErrNoRows:
 		return create(db, w), nil
@@ -81,6 +82,7 @@ func GetOrCreate(db *sql.DB, w http.ResponseWriter, r *http.Request) (*Session, 
 	session.db = db
 	session.id = id
 	session.json = jsonData
+	session.expires = expires
 	return &session, nil
 }
 
