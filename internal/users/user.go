@@ -16,6 +16,7 @@ type User struct {
 	db          *sqlx.DB
 	GHClient    *github.Client
 	UserID      int    `db:"id"`
+	Email       string `db:"email"`
 	GitHubID    int    `db:"github_id"`
 	GitHubToken []byte `db:"github_token"`
 }
@@ -24,7 +25,7 @@ type User struct {
 // user is nil, if an error occurs it will be returned.
 func GetUser(db *sqlx.DB, oauthConf *oauth2.Config, userID int) (*User, error) {
 	user := &User{db: db}
-	err := db.Get(user, "SELECT id, github_id, github_token FROM users WHERE id = ?", userID)
+	err := db.Get(user, "SELECT id, email, github_id, github_token FROM users WHERE id = ?", userID)
 	switch {
 	case err == sql.ErrNoRows:
 		return nil, nil
