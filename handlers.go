@@ -105,8 +105,10 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 		State          string
 	}
 	page := struct {
-		Title    string
-		Installs []install
+		Title           string
+		Email           string
+		Installs        []install
+		HasSubscription bool
 	}{Title: "Console"}
 
 	// Check if logged in
@@ -121,6 +123,7 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
+	page.Email = user.Email
 
 	ghUser, _, err := user.GHClient.Users.Get("")
 	if err != nil {
@@ -207,6 +210,16 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 			Name:           fmt.Sprintf("Unknown, Installation ID %v", installationID),
 			State:          "Enabled",
 		})
+	}
+
+	subs, err := user.StripeSubscriptions()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	for _, sub := range subs {
+		if sub.CancelledAt.IsZero() {
+			page.HasSubscription = true
+		}
 	}
 
 	if err := templates.ExecuteTemplate(w, "console-index.tmpl", page); err != nil {

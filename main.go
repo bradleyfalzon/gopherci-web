@@ -89,7 +89,7 @@ func main() {
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	r.Handle("/", appHandler(homeHandler))
-	r.Handle("/console", appHandler(consoleIndexHandler))
+	r.Handle("/console/", appHandler(consoleIndexHandler))
 	r.Handle("/console/install-state", appHandler(consoleInstallStateHandler))
 	r.Handle("/console/payments", appHandler(consolePaymentsHandler))
 	r.Handle("/console/payments/process/{planID}", appHandler(consolePaymentsProcessHandler))

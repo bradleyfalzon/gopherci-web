@@ -61,7 +61,7 @@ func (um *UserManager) OAuthCallbackHandler(w http.ResponseWriter, r *http.Reque
 	}
 	session.UserID = id
 
-	http.Redirect(w, r, "/console", http.StatusTemporaryRedirect)
+	http.Redirect(w, r, "/console/", http.StatusTemporaryRedirect)
 	return 0, nil
 }
 

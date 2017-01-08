@@ -1,0 +1,38 @@
+{{define "console-header" -}}
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.2.3/css/bulma.min.css" integrity="sha256-F7gqKszCwmz8vhiti+AICU8dLfIEpxzPVihhhGfbbKg=" crossorigin="anonymous" />
+        <link rel="icon" type="image/png" href="/static/favicon-32x32.png" sizes="32x32" />
+        <link rel="icon" type="image/png" href="/static/favicon-16x16.png" sizes="16x16" />
+        <title>{{ if .Title }}{{ .Title }} - {{ end }}GopherCI</title>
+    </head>
+    <body>
+		<header>
+			<nav class="nav has-shadow">
+				<div class="nav-left"><a href="/" class="nav-item is-brand">GopherCI</a></div>
+				<div class="nav-right nav-menu">
+					<span class="nav-item">{{ .Email }}</span>
+					<span class="nav-item"><a href="/auth/logout">Logout</a></span>
+				</div>
+			</nav>
+		</header>
+
+        <div class="section">
+            <div class="columns">
+                <div class="column is-2">
+
+                    <aside class="menu">
+                        <p class="menu-label">General</p>
+                        <ul class="menu-list">
+                            <li><a href="/console/">Dashboard</a></li>
+                            <li><a href="/console/payments">Billing</a></li>
+                        </ul>
+                    </aside>
+                </div>
+                <div class="column is-10">
+
+
+{{end}}

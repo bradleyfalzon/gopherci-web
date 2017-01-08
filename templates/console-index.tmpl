@@ -1,8 +1,12 @@
-{{ template "header" . }}
+{{ template "console-header" . }}
 
-<section class="section">
+<h1 class="title is-1">GopherCI Console</h1>
 
-<h1 class="title is-1">GitHub Integrations</h1>
+{{ if not .HasSubscription }}
+    <div class="notification is-warning">You do not currently have an active subscription, when you're ready, head over to <a href="/console/payments">Billing</a> to get started.</div>
+{{ end }}
+
+<h2 class="title is-3">GitHub Integrations</h2>
 
 <table class="table">
     <thead>
@@ -36,34 +40,7 @@
             </td>
         </tr>
         {{ end }}
-        <tr>
-            <td>Personal</td>
-            <td>github.com/personal</td>
-            <td>No integration installed <a>Install</a></td>
-        </tr>
-        <tr>
-            <td>Organisation</td>
-            <td>github.com/org</td>
-            <td>Not an admin</td>
-        </tr>
-        <tr>
-            <td>Organisation</td>
-            <td>github.com/org</td>
-            <td>Installed <a>Enable</a></td>
-        </tr>
-        <tr>
-            <td>Organisation</td>
-            <td>github.com/org</td>
-            <td>PLAN NAME <a>Disable</a></td>
-        </tr>
-        <tr>
-            <td>Organisation</td>
-            <td>github.com/org</td>
-            <td>PLAN NAME <a>Disable</a></td>
-        </tr>
     </tbody>
 </table>
 
-</section>
-
-{{ template "footer" . }}
+{{ template "console-footer" . }}
