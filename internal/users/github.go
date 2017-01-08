@@ -86,16 +86,26 @@ func (um *UserManager) GitHubLogin(githubID int, token *oauth2.Token) (userID in
 
 	// Get user's email
 	client := NewClient(um.oauthConf, token)
-	user, _, err := client.Users.Get("")
+	emails, _, err := client.Users.ListEmails(nil)
 	if err != nil {
 		return 0, errors.Wrap(err, "error getting email for new user")
+	}
+	var email string
+	for _, e := range emails {
+		if *e.Primary && *e.Verified {
+			email = *e.Email
+			break
+		}
+	}
+	if email == "" {
+		return 0, errors.New("could not get user's primary verified email from GitHub")
 	}
 
 	err = um.db.QueryRow("SELECT id FROM users WHERE github_id = ?", githubID).Scan(&userID)
 	switch {
 	case err == sql.ErrNoRows:
 		// Add token to new user
-		res, err := um.db.Exec("INSERT INTO users (email, github_id, github_token) VALUES (?, ?, ?)", *user.Email, githubID, jsonToken)
+		res, err := um.db.Exec("INSERT INTO users (email, github_id, github_token) VALUES (?, ?, ?)", email, githubID, jsonToken)
 		if err != nil {
 			return 0, errors.Wrapf(err, "error inserting new githubID %q", githubID)
 		}
@@ -103,14 +113,13 @@ func (um *UserManager) GitHubLogin(githubID int, token *oauth2.Token) (userID in
 		if err != nil {
 			return 0, errors.Wrap(err, "error in lastInsertId")
 		}
-
 		return int(id), nil
 	case err != nil:
 		return 0, errors.Wrapf(err, "error getting userID for githubID %q", githubID)
 	}
 
 	// Add token to existing user and update email
-	_, err = um.db.Exec("UPDATE users SET email = ?, github_token = ? WHERE id = ?", *user.Email, jsonToken, userID)
+	_, err = um.db.Exec("UPDATE users SET email = ?, github_token = ? WHERE id = ?", email, jsonToken, userID)
 	if err != nil {
 		return 0, errors.Wrapf(err, "could set userID %q github_token", userID)
 	}
