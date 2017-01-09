@@ -27,12 +27,9 @@ var (
 )
 
 func main() {
-	log.Println("Starting...")
+	log.Println("Starting GopherCI-web")
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file:", err)
-	}
+	_ = godotenv.Load() // .env is not critical
 
 	listen := os.Getenv("HTTP_LISTEN")
 
@@ -44,6 +41,7 @@ func main() {
 	dsn := fmt.Sprintf(`%s:%s@tcp(%s:%s)/%s?charset=utf8&collation=utf8_unicode_ci&timeout=6s&time_zone='%%2B00:00'&parseTime=true`,
 		os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_DATABASE"),
 	)
+	var err error
 	db, err = sql.Open(os.Getenv("DB_DRIVER"), dsn)
 	if err != nil {
 		log.Fatal("Error setting up DB:", err)
