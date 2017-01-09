@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 
 	"github.com/bradleyfalzon/gopherci-web/internal/session"
 	"github.com/google/go-github/github"
@@ -14,6 +15,10 @@ import (
 
 	"golang.org/x/oauth2"
 )
+
+// githubBaseURL is the baseURL for github.com/google/go-github/github
+// client, variable to easily change in tests.
+var githubBaseURL = "https://api.github.com/"
 
 // OAuthLoginHandler starts the initial oauth login flow by redirecting the
 // user to GitHub for authentication and authorisation our app.
@@ -69,6 +74,7 @@ func (um *UserManager) OAuthCallbackHandler(w http.ResponseWriter, r *http.Reque
 func NewClient(oauthConf *oauth2.Config, token *oauth2.Token) *github.Client {
 	oauthClient := oauthConf.Client(oauth2.NoContext, token)
 	client := github.NewClient(oauthClient)
+	client.BaseURL, _ = url.Parse(githubBaseURL)
 	//if um.overwriteBaseURL != "" {
 	//client.BaseURL, _ = url.Parse(um.overwriteBaseURL)
 	//}
@@ -84,19 +90,7 @@ func (um *UserManager) GitHubLogin(githubID int, token *oauth2.Token) (userID in
 		return 0, errors.Wrap(err, "could not marshal oauth2.token")
 	}
 
-	// Get user's email
-	client := NewClient(um.oauthConf, token)
-	emails, _, err := client.Users.ListEmails(nil)
-	if err != nil {
-		return 0, errors.Wrap(err, "error getting email for new user")
-	}
-	var email string
-	for _, e := range emails {
-		if *e.Primary && *e.Verified {
-			email = *e.Email
-			break
-		}
-	}
+	email, err := um.getGitHubEmail(token)
 	if email == "" {
 		return 0, errors.New("could not get user's primary verified email from GitHub")
 	}
@@ -124,4 +118,22 @@ func (um *UserManager) GitHubLogin(githubID int, token *oauth2.Token) (userID in
 		return 0, errors.Wrapf(err, "could set userID %q github_token", userID)
 	}
 	return userID, nil
+}
+
+// getGetHubEmail returns the user's primary and verified email address, or
+// blank if none found, or an error if an error occurred.
+func (um *UserManager) getGitHubEmail(token *oauth2.Token) (string, error) {
+	client := NewClient(um.oauthConf, token)
+	emails, _, err := client.Users.ListEmails(nil)
+	if err != nil {
+		return "", errors.Wrap(err, "error getting email for new user")
+	}
+	var email string
+	for _, e := range emails {
+		if *e.Primary && *e.Verified {
+			email = *e.Email
+			break
+		}
+	}
+	return email, nil
 }

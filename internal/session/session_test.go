@@ -57,9 +57,10 @@ func TestGetOrCreate_get(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectQuery("SELECT json FROM sessions WHERE id=?").
+	rows := sqlmock.NewRows([]string{"json", "expires_at"}).AddRow(jsonData, time.Unix(10, 0))
+	mock.ExpectQuery("SELECT json, expires_at FROM sessions WHERE id=?").
 		WithArgs(sidArray).
-		WillReturnRows(sqlmock.NewRows([]string{"json"}).AddRow(jsonData))
+		WillReturnRows(rows)
 
 	s, err := GetOrCreate(db, w, r)
 	if err != nil {
@@ -71,6 +72,7 @@ func TestGetOrCreate_get(t *testing.T) {
 		id:       uuid.Must(uuid.Parse(sid)),
 		json:     jsonData,
 		GitHubID: 1,
+		expires:  time.Unix(10, 0),
 	}
 
 	if !reflect.DeepEqual(s, want) {
@@ -192,8 +194,10 @@ func TestGetOrCreate_notJSON(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectQuery("SELECT json FROM sessions WHERE id=?").
-		WillReturnRows(sqlmock.NewRows([]string{"json"}).AddRow([]byte(`notjson`)))
+	rows := sqlmock.NewRows([]string{"json", "expires_at"}).
+		AddRow([]byte("notjson"), time.Unix(10, 0))
+	mock.ExpectQuery("SELECT json, expires_at.+").
+		WillReturnRows(rows)
 
 	s, err := GetOrCreate(db, w, r)
 	if err != nil {
