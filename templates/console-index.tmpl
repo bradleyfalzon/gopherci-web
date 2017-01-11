@@ -20,7 +20,7 @@
         {{ range .Installs }}
         <tr>
             <td>{{ .Type }}</td>
-            <td><a href="{{ .NameURL }}">{{ .Name }}</a></td>
+            <td>{{ .Name }}</td>
             <td>
                 <form method="POST" action="/console/install-state">
                     <input type="hidden" name="installationID" value="{{ .InstallationID }}">

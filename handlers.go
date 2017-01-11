@@ -100,7 +100,6 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 		InstallationID int
 		Type           string
 		Name           string
-		NameURL        string
 		CanDisable     bool // allows the user to disable the installation
 		State          string
 	}
@@ -152,7 +151,6 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 		AccountID:  *ghUser.ID,
 		Type:       "Personal",
 		Name:       *ghUser.Login,
-		NameURL:    *ghUser.HTMLURL,
 		CanDisable: true,
 	})
 
@@ -163,7 +161,6 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 			AccountID: *m.Organization.ID,
 			Type:      "Organisation",
 			Name:      *m.Organization.Login,
-			NameURL:   *m.OrganizationURL,
 		}
 
 		page.Installs = append(page.Installs, install)
