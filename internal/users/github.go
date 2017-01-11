@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 
@@ -57,14 +56,13 @@ func (um *UserManager) OAuthCallbackHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		return http.StatusInternalServerError, errors.Wrap(err, "github: could not get user")
 	}
-	log.Printf("github: logged in as GitHub user: %s\n", *ghUser.Login)
 
 	// Set session to this user
-	id, err := um.GitHubLogin(*ghUser.ID, token)
+	session.UserID, err = um.GitHubLogin(*ghUser.ID, token)
 	if err != nil {
 		return http.StatusInternalServerError, errors.Wrap(err, "github: could not set github user in db")
 	}
-	session.UserID = id
+	um.logger.WithField("userID", session.UserID).Printf("github: logged in as GitHub user: %s", *ghUser.Login)
 
 	http.Redirect(w, r, "/console/", http.StatusTemporaryRedirect)
 	return 0, nil

@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/google/go-github/github"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -20,6 +21,7 @@ import (
 
 // User represents a GopherCI-web user.
 type User struct {
+	Logger           *logrus.Entry
 	db               *sqlx.DB
 	GHClient         *github.Client
 	UserID           int    `db:"id"`
@@ -31,7 +33,7 @@ type User struct {
 
 // GetUser looks up a user in the db and returns it, if no user was found,
 // user is nil, if an error occurs it will be returned.
-func GetUser(db *sqlx.DB, oauthConf *oauth2.Config, userID int) (*User, error) {
+func GetUser(logger *logrus.Entry, db *sqlx.DB, oauthConf *oauth2.Config, userID int) (*User, error) {
 	user := &User{db: db}
 	err := db.Get(user, "SELECT id, email, github_id, github_token, stripe_customer_id FROM users WHERE id = ?", userID)
 	switch {
@@ -47,6 +49,7 @@ func GetUser(db *sqlx.DB, oauthConf *oauth2.Config, userID int) (*User, error) {
 	}
 	user.GitHubToken = nil
 	user.GHClient = NewClient(oauthConf, &token)
+	user.Logger = logger.WithField("userID", user.UserID)
 	return user, nil
 }
 

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -32,9 +31,9 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 
 	// Get Session and store in request's context
-	s, err := session.GetOrCreate(db, w, r)
+	s, err := session.GetOrCreate(logger.WithField("pkg", "session"), db, w, r)
 	if err != nil {
-		log.Println("error: could not initialise session:", err)
+		logger.WithError(err).Error("could not get session")
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
@@ -43,7 +42,7 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Execute handler
 	if code, err := fn(w, r); err != nil {
 		if code >= http.StatusInternalServerError {
-			log.Printf("internal error type %T: %+v", err, err)
+			logger.WithError(err).Printf("internal error type %T: %+v", err, err)
 			err = errors.New("Internal error")
 		}
 		errorHandler(w, r, code, err)
@@ -51,7 +50,7 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Save session even if errors occurred
 	if err := s.Save(); err != nil {
-		log.Println("appHandler: could not save session:", err)
+		logger.WithError(err).Error("could not save session")
 	}
 }
 
@@ -62,7 +61,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 	}{"GopherCI"}
 
 	if err := templates.ExecuteTemplate(w, "home.tmpl", page); err != nil {
-		log.Println("error parsing home template:", err)
+		logger.WithError(err).Error("error parsing home template")
 	}
 	return http.StatusOK, nil
 }
@@ -73,7 +72,7 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func internalError(w http.ResponseWriter, r *http.Request, err error) {
-	log.Printf("internal error: %+v", err)
+	logger.Printf("internal error: %+v", err)
 	errorHandler(w, r, http.StatusInternalServerError, errors.New("Internal Error"))
 }
 
@@ -89,7 +88,7 @@ func errorHandler(w http.ResponseWriter, r *http.Request, code int, err error) {
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(code)
 	if err := templates.ExecuteTemplate(w, "error.tmpl", page); err != nil {
-		log.Println("error parsing error template:", err)
+		logger.WithError(err).Error("error parsing error template")
 	}
 }
 
@@ -220,7 +219,7 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 	}
 
 	if err := templates.ExecuteTemplate(w, "console-index.tmpl", page); err != nil {
-		log.Println("error parsing console-index template:", err)
+		logger.WithError(err).Error("error parsing console-index template")
 	}
 	return http.StatusOK, nil
 }
@@ -312,7 +311,7 @@ func consolePaymentsHandler(w http.ResponseWriter, r *http.Request) (int, error)
 	}
 
 	if err := templates.ExecuteTemplate(w, "console-payments.tmpl", page); err != nil {
-		log.Println("error parsing console-payments template:", err)
+		logger.WithError(err).Error("error parsing console-payments template")
 	}
 	return http.StatusOK, nil
 }
@@ -356,7 +355,7 @@ func consolePaymentsProcessHandler(w http.ResponseWriter, r *http.Request) (int,
 		return http.StatusInternalServerError, errors.Wrap(err, "could not process stripe payment")
 	}
 
-	log.Printf("processed stripe subscription for userID %v on plan %v", user.UserID, vars["planID"])
+	user.Logger.Infof("processed stripe subscription on plan %v", vars["planID"])
 
 	http.Redirect(w, r, "/console/payments", http.StatusFound)
 	return 0, nil
@@ -402,7 +401,7 @@ func consolePaymentsCancelHandler(w http.ResponseWriter, r *http.Request) (int, 
 
 	// TODO disable all integrations at sub.PeriodEnd #7
 
-	log.Printf("cancelled stripe subscription for userID %v subscriptionID %q", user.UserID, r.Form.Get("subscriptionID"))
+	user.Logger.Infof("cancelled stripe subscription subscriptionID %q", r.Form.Get("subscriptionID"))
 
 	http.Redirect(w, r, "/console/payments", http.StatusFound)
 	return 0, nil

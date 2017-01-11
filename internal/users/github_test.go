@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -14,11 +13,14 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/Sirupsen/logrus"
 	sqlmock "github.com/bradleyfalzon/go-sqlmock"
 	"github.com/bradleyfalzon/gopherci-web/internal/session"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
+
+var logger = logrus.New().WithField("pkg", "session_test")
 
 func TestOAuthLoginHandler(t *testing.T) {
 	s := &session.Session{}
@@ -26,7 +28,7 @@ func TestOAuthLoginHandler(t *testing.T) {
 	r = r.WithContext(context.WithValue(context.Background(), session.CtxKey{}, s))
 	w := httptest.NewRecorder()
 
-	um := NewUserManager(nil, "id", "secret", "stripeKey")
+	um := NewUserManager(logger, nil, "id", "secret", "stripeKey")
 	um.oauthConf.Endpoint.AuthURL = "http://example.com"
 	um.oauthConf.Endpoint.TokenURL = ""
 	_, err := um.OAuthLoginHandler(w, r)
@@ -90,7 +92,7 @@ func TestOAuthCallbackHandler(t *testing.T) {
 	wantUserID := 12
 	//um := &mockUserManager{UserID: wantUserID}
 
-	um := NewUserManager(nil, "id", "secret", "stripeKey")
+	um := NewUserManager(logger, nil, "id", "secret", "stripeKey")
 	um.overwriteBaseURL = ts.URL
 	um.oauthConf.Endpoint.AuthURL = ""
 	um.oauthConf.Endpoint.TokenURL = ts.URL
@@ -134,7 +136,7 @@ func TestGitHubLogin_new(t *testing.T) {
 	defer ts.Close()
 	githubBaseURL = ts.URL
 
-	um := NewUserManager(sqlx.NewDb(db, "sqlmock"), "", "", "stripeKey")
+	um := NewUserManager(logger, sqlx.NewDb(db, "sqlmock"), "", "", "stripeKey")
 
 	mock.ExpectQuery("SELECT id FROM users WHERE github_id = ?").
 		WithArgs(githubID).
@@ -174,7 +176,7 @@ func TestGitHubLogin_update(t *testing.T) {
 	defer ts.Close()
 	githubBaseURL = ts.URL
 
-	um := NewUserManager(sqlx.NewDb(db, "sqlmock"), "", "", "stripeKey")
+	um := NewUserManager(logger, sqlx.NewDb(db, "sqlmock"), "", "", "stripeKey")
 
 	mock.ExpectQuery("SELECT id FROM users WHERE github_id = ?").
 		WithArgs(githubID).
@@ -201,7 +203,7 @@ func TestGitHubLogin_errSelect(t *testing.T) {
 	}
 	defer db.Close()
 
-	um := NewUserManager(sqlx.NewDb(db, "sqlmock"), "", "", "stripeKey")
+	um := NewUserManager(logger, sqlx.NewDb(db, "sqlmock"), "", "", "stripeKey")
 
 	mock.ExpectQuery("SELECT .*").WillReturnError(errors.New("some error"))
 
@@ -218,7 +220,7 @@ func TestGitHubLogin_errInsert(t *testing.T) {
 	}
 	defer db.Close()
 
-	um := NewUserManager(sqlx.NewDb(db, "sqlmock"), "", "", "stripeKey")
+	um := NewUserManager(logger, sqlx.NewDb(db, "sqlmock"), "", "", "stripeKey")
 
 	mock.ExpectQuery("SELECT .*").WillReturnError(sql.ErrNoRows)
 	mock.ExpectExec("INSERT INTO users .*").WillReturnError(errors.New("some error"))
@@ -236,7 +238,7 @@ func TestGitHubLogin_errUpdate(t *testing.T) {
 	}
 	defer db.Close()
 
-	um := NewUserManager(sqlx.NewDb(db, "sqlmock"), "", "", "stripeKey")
+	um := NewUserManager(logger, sqlx.NewDb(db, "sqlmock"), "", "", "stripeKey")
 
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectExec("UPDATE users .*").WillReturnError(errors.New("some error"))
@@ -271,13 +273,12 @@ func TestGetGitHubEmail(t *testing.T) {
 	for _, test := range tests {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			byt, _ := json.Marshal(test.emails)
-			log.Println("bty:", string(byt))
 			fmt.Fprintln(w, string(byt))
 		}))
 		defer ts.Close()
 		githubBaseURL = ts.URL
 
-		um := NewUserManager(nil, "", "", "stripeKey")
+		um := NewUserManager(logger, nil, "", "", "stripeKey")
 		have, err := um.getGitHubEmail(&oauth2.Token{AccessToken: "a"})
 		if err != nil {
 			t.Fatal("unexpected error:", err)

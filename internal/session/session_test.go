@@ -11,9 +11,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	sqlmock "github.com/bradleyfalzon/go-sqlmock"
 	"github.com/google/uuid"
 )
+
+var logger = logrus.New().WithField("pkg", "session_test")
 
 func TestGetOrCreate_create(t *testing.T) {
 	r := httptest.NewRequest("GET", "/", nil)
@@ -25,7 +28,7 @@ func TestGetOrCreate_create(t *testing.T) {
 	}
 	defer db.Close()
 
-	s, err := GetOrCreate(db, w, r)
+	s, err := GetOrCreate(logger, db, w, r)
 	if err != nil {
 		t.Fatal("unexpected error: ", err)
 	}
@@ -62,7 +65,7 @@ func TestGetOrCreate_get(t *testing.T) {
 		WithArgs(sidArray).
 		WillReturnRows(rows)
 
-	s, err := GetOrCreate(db, w, r)
+	s, err := GetOrCreate(logger, db, w, r)
 	if err != nil {
 		t.Fatal("unexpected error: ", err)
 	}
@@ -100,7 +103,7 @@ func TestGetOrCreate_cannotParse(t *testing.T) {
 	}
 	defer db.Close()
 
-	s, err := GetOrCreate(db, w, r)
+	s, err := GetOrCreate(logger, db, w, r)
 	if err != nil {
 		t.Fatal("unexpected error: ", err)
 	}
@@ -132,7 +135,7 @@ func TestGetOrCreate_sqlErrNoRows(t *testing.T) {
 
 	mock.ExpectQuery(".*").WillReturnError(sql.ErrNoRows)
 
-	s, err := GetOrCreate(db, w, r)
+	s, err := GetOrCreate(logger, db, w, r)
 	if err != nil {
 		t.Fatal("unexpected error: ", err)
 	}
@@ -164,7 +167,7 @@ func TestGetOrCreate_sqlOtherErr(t *testing.T) {
 
 	mock.ExpectQuery(".*").WillReturnError(errors.New("some error"))
 
-	s, err := GetOrCreate(db, w, r)
+	s, err := GetOrCreate(logger, db, w, r)
 	if err == nil {
 		t.Fatal("expected error got: ", err)
 	}
@@ -199,7 +202,7 @@ func TestGetOrCreate_notJSON(t *testing.T) {
 	mock.ExpectQuery("SELECT json, expires_at.+").
 		WillReturnRows(rows)
 
-	s, err := GetOrCreate(db, w, r)
+	s, err := GetOrCreate(logger, db, w, r)
 	if err != nil {
 		t.Fatal("unexpected error: ", err)
 	}

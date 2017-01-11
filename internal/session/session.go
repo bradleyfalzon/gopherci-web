@@ -6,10 +6,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
@@ -29,10 +29,11 @@ type CtxKey struct{}
 // marshalled into a []byte storage using json, so some restrictions such as
 // only exported members are saved apply.
 type Session struct {
-	db      *sql.DB   // db handler
-	id      uuid.UUID // session ID
-	expires time.Time // time session should expire, only set on new sessions
-	json    []byte    // json session from db, used to check if changes made
+	logger  *logrus.Entry // structured logger
+	db      *sql.DB       // db handler
+	id      uuid.UUID     // session ID
+	expires time.Time     // time session should expire, only set on new sessions
+	json    []byte        // json session from db, used to check if changes made
 
 	UserID           int       // Our User ID
 	GitHubID         int       // User's GitHub ID
@@ -42,14 +43,14 @@ type Session struct {
 // GetOrCreate reads the http.Request looking for a session ID and attempts to
 // load this sesstion from the database. Most errors are handled by creating a
 // new session. Call Save() on the session to persist to db.
-func GetOrCreate(db *sql.DB, w http.ResponseWriter, r *http.Request) (*Session, error) {
+func GetOrCreate(logger *logrus.Entry, db *sql.DB, w http.ResponseWriter, r *http.Request) (*Session, error) {
 	// Get session id from cookie
 	cookie, err := r.Cookie(cookieName)
 	switch {
 	case err == http.ErrNoCookie:
 		return create(db, w), nil
 	case err != nil:
-		log.Println("session: unexpected error reading cookie:", err)
+		logger.WithError(err).Warn("unexpected error reading cookie")
 		return create(db, w), nil
 	}
 
@@ -61,7 +62,7 @@ func GetOrCreate(db *sql.DB, w http.ResponseWriter, r *http.Request) (*Session, 
 
 	id, err := uuid.Parse(cookie.Value)
 	if err != nil {
-		log.Printf("session: could not parse cookie %q", cookie.Value)
+		logger.WithError(err).Warnf("could not parse cookie %q", cookie.Value)
 		return create(db, w), nil
 	}
 
@@ -76,7 +77,7 @@ func GetOrCreate(db *sql.DB, w http.ResponseWriter, r *http.Request) (*Session, 
 
 	var session Session
 	if err := json.Unmarshal(jsonData, &session); err != nil {
-		log.Printf("session: could not unmarshal session id %q (creating new one instead): %v", cookie.Value, err)
+		logger.WithError(err).Printf("could not unmarshal session id %q (creating new one instead)", cookie.Value)
 		return create(db, w), nil
 	}
 	session.db = db
