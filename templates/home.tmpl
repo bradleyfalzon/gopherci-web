@@ -1,13 +1,8 @@
 {{ template "header" . }}
-<style>
-.nav-item a, a.nav-item { color: white; }
-.button.is-info.is-outlined { background-color: white; }
-
-</style>
-<header class="nav" style="background: #3069b3; color: white; border-bottom: 1px solid white;">
+<header class="nav">
   <div class="container">
     <div class="nav-left">
-      <a class="nav-item" href="/" style="font-size: 26px;font-weight: bold;">Gopher&nbsp;<span style="background-color: white;color: #3069b3;padding: 0px 3px;">CI</span></a>
+      <a class="nav-item is-logo" href="/">Gopher &nbsp;<span class="is-bold">CI</span></a>
     </div>
     <span class="nav-toggle">
       <span></span>
@@ -25,7 +20,7 @@
         Features
       </a>
       <span class="nav-item">
-        <a class="button is-info is-outlined is-inverted" href="/gh/login">
+        <a class="button is-info is-outlined is-inverted is-gh" href="/gh/login">
           <span class="icon">
             <i class="fa fa-github"></i>
           </span>
@@ -35,37 +30,35 @@
     </div>
   </div>
 </header>
-<section class="hero is-primary is-large header-image" style="background:#3069b3">
-  <div class="columns">
-    <div class="column">
-        <div style="display:flex;align-items:center;height:100%; padding: 20px;">
-        <img src="https://srv4.teambrad.net/public/tmp/breaking.png">
-        </div>
-    </div>
-    <div class="column">
-        <div class="hero-body">
-            <div class="container has-text-centered">
-            <h1 class="title is-2">Gopher CI</h1>
-            <h2 class="subtitle is-5">Continuous Quality Control</h2>
-            <p style="font-size: 1.4em;margin-top: 70px;">GopherCI runs asddfs sdfjkjskdf jkhsdf jkhsdfhjk djkshf dsjkfjkhds hjkfhjk dsfhjkdsf</p>
-            </div>
-        </div>
+<section class="hero is-primary is-large">
+  <div class="container">
+    <div class="columns">
+      <div class="column">
+          <div class="img">
+            <img src="https://srv4.teambrad.net/public/tmp/breaking.png">
+          </div>
+      </div>
+      <div class="column">
+          <div class="hero-body">
+              <div class="container has-text-centered">
+                <h1 class="title is-2">Gopher CI</h1>
+                <h2 class="subtitle is-5">Continuous Quality Control</h2>
+                <p>GopherCI runs a suite of automated testing tools so you don't have to.</p>
+              </div>
+          </div>
+      </div>
     </div>
   </div>
 </section>
-<style>
-.panel-block.section p { color: #4a4a4a;}
-h4.panel-header { color: #3069b3; }
-</style>
-<div class="hero-cta" style="background-color: white;">
+<div class="hero-cta">
   <nav class="level">
     <div class="level-item has-text-centered">
-      <a class="button is-primary is-large" style="background:white; color:#3069b3; border: 1px solid #3069b3;" href="/gh/login"><span class="icon"><i class="fa fa-github"></i></span><span>Start using with GitHub</span></a>
+      <a class="button is-primary is-large"  href="/gh/login"><span class="icon"><i class="fa fa-github"></i></span><span>Start using with GitHub</span></a>
     </div>
   </nav>
 </div>
 <a id="more"></a>
-<div class="section main pad-15-vh about" style="background: #3069b3;">
+<div class="section main pad-15-vh about">
   <div class="container">
     <div class="columns">
       <div class="column is-4">
@@ -108,7 +101,7 @@ h4.panel-header { color: #3069b3; }
   <div class="container">
     <div class="columns">
       <div class="column is-half is-offset-one-quarter has-text-centered">
-        <h2 style="color: #3069b3;" class="is-header">Open Source</h2>
+        <h2 class="is-header">Open Source</h2>
         <p>
           GopherCI source code is available on GitHub and licenced under <a href="https://github.com/bradleyfalzon/gopherci/blob/master/LICENSE">Affero GPL</a>.
         </p>
@@ -119,13 +112,8 @@ h4.panel-header { color: #3069b3; }
     </div>
   </div>
 </div>
-<style>
-.features h2.is-header, .pricing h2.is-header { font-weight: 400; color: white;}
-.pricing .panel { background: white; }
-.button.is-primary.is-outlined {     background-color: white; color: #3069b3; font-weight: bold; border: 1px solid #3069b3; }
-</style>
 <a id="pricing"></a>
-<div class="section main pad-15-vh pricing" style="background: #3069b3;">
+<div class="section main pad-15-vh pricing">
   <div class="container">
     <div class="columns">
       <div class="column is-half is-offset-one-quarter has-text-centered">
@@ -219,18 +207,8 @@ h4.panel-header { color: #3069b3; }
     </div>
   </div>
 </div>
-<style>
-.button.is-primary.is-outlined {     background-color: white; color: #3069b3; font-weight: bold; border: 1px solid #3069b3; }
-.button {
-    background-color: white;
-    color: #3069b3;
-    font-weight: bold;
-    border: 1px solid #3069b3;
-}
-</style>
-
 <a id="features"></a>
-<div class="section main pad-15-vh features" style="background: #3069b3;">
+<div class="section main pad-15-vh features">
   <div class="container">
     <div class="columns">
       <div class="column is-half is-offset-one-quarter has-text-centered">
@@ -245,7 +223,6 @@ h4.panel-header { color: #3069b3; }
             <br>
             <h4 class="panel-header is-fullwidth has-text-centered">Go Vet</h4>
             <p>Detect potential bugs such as copying locks, formatting directives in Println and more with Go Vet.</p>
-            <p>Issues detected by Go Vet are likely bugs, and should be reviewed.</p>
             <footer class="has-text-centered panel-footer">
               <a class="button  is-outlined is-half" href="https://golang.org/cmd/vet/">
                 Read more
@@ -262,7 +239,7 @@ h4.panel-header { color: #3069b3; }
             <h4 class="panel-header is-fullwidth has-text-centered">Golint</h4>
             <p>Golint suggests stylistic issues such as missing documentation for exported items and consistent naming such as ID instead of Id.</p>
             <footer class="has-text-centered panel-footer">
-              <a class="button  is-outlined is-half" href="https://github.com/golang/lint">
+              <a class="button is-outlined is-half" href="https://github.com/golang/lint">
                 Read more
               </a>
             </footer>
@@ -275,7 +252,7 @@ h4.panel-header { color: #3069b3; }
             <p class="has-text-centered"><i class="fa fa-check-circle icon-block" aria-hidden="true"></i></p>
             <br>
             <h4 class="panel-header is-fullwidth has-text-centered">Staticcheck</h4>
-            <p>Staticcheck provides advanced static analysis of common but critical bugs with near zero false positives, any issues found are almost certainly critical.</p>
+            <p>Staticcheck provides advanced static analysis of common but critical bugs with near zero false positives.</p>
             <footer class="has-text-centered panel-footer">
               <a class="button  is-outlined is-half" href="https://github.com/dominikh/go-staticcheck">
                 Read more
@@ -321,7 +298,6 @@ h4.panel-header { color: #3069b3; }
             <br>
             <h4 class="panel-header is-fullwidth has-text-centered">Gofmt</h4>
             <p>This check is to simply ensure the contribution has been ran through the gofmt utility.</p>
-            <p>Gofmt ensures contributors format their code.</p>
             <footer class="has-text-centered panel-footer">
               <a class="button is-outlined is-half" href="https://github.com/dominikh/go-simple">
                 Read more
