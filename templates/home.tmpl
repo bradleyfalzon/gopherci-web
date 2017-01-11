@@ -1,10 +1,13 @@
 {{ template "header" . }}
-<header class="nav">
+<style>
+.nav-item a, a.nav-item { color: white; }
+.button.is-info.is-outlined { background-color: white; }
+
+</style>
+<header class="nav" style="background: #3069b3; color: white; border-bottom: 1px solid white;">
   <div class="container">
     <div class="nav-left">
-      <a class="nav-item" href="../index.html">
-        <img src="/static/logoCI.png" alt="Logo">
-      </a>
+      <a class="nav-item" href="/" style="font-size: 26px;font-weight: bold;">Gopher&nbsp;<span style="background-color: white;color: #3069b3;padding: 0px 3px;">CI</span></a>
     </div>
     <span class="nav-toggle">
       <span></span>
@@ -32,19 +35,29 @@
     </div>
   </div>
 </header>
-<section class="hero is-primary is-large header-image">
-  <div class="hero-body">
-    <div class="container has-text-centered">
-      <h1 class="title is-2">
-      Gopher CI
-      </h1>
-      <h2 class="subtitle is-5">
-      Continuous Quality Control
-      </h2>
+<section class="hero is-primary is-large header-image" style="background:#3069b3">
+  <div class="columns">
+    <div class="column">
+        <div style="display:flex;align-items:center;height:100%; padding: 20px;">
+        <img src="https://srv4.teambrad.net/public/tmp/breaking.png">
+        </div>
+    </div>
+    <div class="column">
+        <div class="hero-body">
+            <div class="container has-text-centered">
+            <h1 class="title is-2">Gopher CI</h1>
+            <h2 class="subtitle is-5">Continuous Quality Control</h2>
+            <p style="font-size: 1.4em;margin-top: 70px;">GopherCI runs asddfs sdfjkjskdf jkhsdf jkhsdfhjk djkshf dsjkfjkhds hjkfhjk dsfhjkdsf</p>
+            </div>
+        </div>
     </div>
   </div>
 </section>
-<div class="hero-cta">
+<style>
+.panel-block.section p { color: #4a4a4a;}
+h4.panel-header { color: #3069b3; }
+</style>
+<div class="hero-cta" style="background-color: white;">
   <nav class="level">
     <div class="level-item has-text-centered">
       <a class="button is-primary is-large" href="/console/"><span class="icon"><i class="fa fa-github"></i></span><span>Start using with GitHub</span></a>
@@ -52,7 +65,7 @@
   </nav>
 </div>
 <a id="more"></a>
-<div class="section main pad-15-vh about">
+<div class="section main pad-15-vh about" style="background: #3069b3;">
   <div class="container">
     <div class="columns">
       <div class="column is-4">
@@ -95,7 +108,7 @@
   <div class="container">
     <div class="columns">
       <div class="column is-half is-offset-one-quarter has-text-centered">
-        <h2 class="is-header">Open Source</h2>
+        <h2 style="color: #3069b3;" class="is-header">Open Source</h2>
         <p>
           GopherCI source code is available on GitHub and licenced under <a href="https://github.com/bradleyfalzon/gopherci/blob/master/LICENSE">Affero GPL</a>.
         </p>
@@ -106,8 +119,13 @@
     </div>
   </div>
 </div>
+<style>
+.features h2.is-header, .pricing h2.is-header { font-weight: 400; color: white;}
+.pricing .panel { background: white; }
+.button.is-primary.is-outlined {     background-color: white; color: #3069b3; font-weight: bold; border: 1px solid #3069b3; }
+</style>
 <a id="pricing"></a>
-<div class="section main pad-15-vh pricing">
+<div class="section main pad-15-vh pricing" style="background: #3069b3;">
   <div class="container">
     <div class="columns">
       <div class="column is-half is-offset-one-quarter has-text-centered">
@@ -201,8 +219,18 @@
     </div>
   </div>
 </div>
+<style>
+.button.is-primary.is-outlined {     background-color: white; color: #3069b3; font-weight: bold; border: 1px solid #3069b3; }
+.button {
+    background-color: white;
+    color: #3069b3;
+    font-weight: bold;
+    border: 1px solid #3069b3;
+}
+</style>
+
 <a id="features"></a>
-<div class="section main pad-15-vh features">
+<div class="section main pad-15-vh features" style="background: #3069b3;">
   <div class="container">
     <div class="columns">
       <div class="column is-half is-offset-one-quarter has-text-centered">

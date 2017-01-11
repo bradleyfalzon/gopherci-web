@@ -271,7 +271,7 @@ func consoleInstallStateHandler(w http.ResponseWriter, r *http.Request) (int, er
 		return http.StatusInternalServerError, err
 	}
 
-	http.Redirect(w, r, "/console", http.StatusFound)
+	http.Redirect(w, r, "/console/", http.StatusFound)
 	return 0, nil
 }
 
