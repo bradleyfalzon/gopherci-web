@@ -114,7 +114,7 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 	// TODO this should be a part of middleware
 	session := session.FromContext(r.Context())
 	if !session.LoggedIn() {
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, "/gh/login", http.StatusFound)
 		return 0, nil
 	}
 
