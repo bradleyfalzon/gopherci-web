@@ -15,7 +15,7 @@ p { margin-bottom: 10px; }
 
 .hero.is-primary {
   background-color: #3069b3;
-  height: 100vh;
+  height: 85vh;
 }
 
 .title.is-2 {
@@ -54,6 +54,14 @@ h4.panel-header {
 .about .panel-block {
   min-height: 350px;
 }
+
+.features-list ul { padding-left: 30px; margin-bottom: 30px; }
+.features-list li {
+    list-style-type: disc;
+    margin-bottom: 5px;
+    line-height: 1.6em;
+}
+
 
 .features .panel-block {
   min-height: 350px;
@@ -242,9 +250,7 @@ a {
   border-bottom-color: #3069b3;
 }
 
-.hero .container, .hero .columns {
-  height: 100%;
-}
+.hero .columns { height: 100%; }
 
 .panel {
   border-radius: 0px;
