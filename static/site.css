@@ -1,7 +1,11 @@
 body, html {
   font-family: Roboto,"Helvetica Neue",Helvetica,Arial,sans-serif;
   height: 100%;
+  font-size: 16px;
+  line-height: 1.6em;
 }
+
+p { margin-bottom: 10px; }
 
 .header-image {
   background-size: cover;
@@ -22,8 +26,10 @@ body, html {
   padding: 30px 0;
 }
 
+/* Make panels height even when in a row */
+.about .panel, .about .panel-block { height: 100%; }
+
 .panel-block.section p {
-  font-size: 15px;
   line-height: 1.4;
   color: #95A5A6;
   font-weight: 300;
@@ -39,8 +45,9 @@ body, html {
 
 h4.panel-header {
   font-weight: 700;
-  color: #95A5A6;
+  color: #4a4a4a;
   font-size: 1.5em;
+  line-height: 1.3em;
   padding-bottom: 35px;
 }
 
@@ -78,10 +85,12 @@ h4.panel-header {
   padding-bottom: 35px;
 }
 
+.pricing { background: #3069b3; }
+
 .pricing h2.is-header {
   font-size: 2.5em;
   font-weight: 300;
-  color: rgba(0, 0, 0, 0.75);
+  color: rgba(255, 255, 255, 0.9);
   padding-bottom: 25px;
 }
 
@@ -89,7 +98,7 @@ h4.panel-header {
   box-shadow: none;
   border: 1px solid;
   border-color: #e5e6e9 #dfe0e4 #d0d1d5;
-  padding: 10px 50px 10px 50px;
+  padding: 30px 20px 10px 20px;
   margin: 15px 0;
   border-radius: 0px;
   background: #3069b3;
@@ -119,7 +128,7 @@ h4.panel-header {
   margin-bottom: 8px;
 }
 
-.pricing button.button.is-primary {
+.pricing .button.is-primary {
   margin-top: 50px;
 }
 
@@ -195,15 +204,11 @@ footer.panel-footer {
 
 .hero .hero-body {
   font-size: 1.4em;
-  margin-top: 70px;
+  line-height: 1.6em;
   display: flex;
   align-items: center;
   height: 100%;
   padding: 20px;
-}
-
-.hero .hero-body .container {
-  height: 286px;
 }
 
 .is-logo {
@@ -226,7 +231,7 @@ a {
 }
 
 .content a:not(.button):visited {
-  color: #006fff;
+  color: #3069b3;
 }
 
 .footer {
