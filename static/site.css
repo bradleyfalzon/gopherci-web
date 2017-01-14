@@ -116,6 +116,13 @@ h4.panel-header {
   background-color: transparent;
   border: none;
   font-size: 3em;
+  padding-bottom: 0;
+}
+
+.pricing .plan-usd {
+    border: none;
+    font-size: 0.8em;
+    margin-top: 0;
 }
 
 .panel-heading.plan-price small {
@@ -125,6 +132,7 @@ h4.panel-header {
 .panel-block.plan-name {
   font-weight: bold;
   color: #646464;
+  font-size: 1.2em;
 }
 
 .pricing .plan-details {
