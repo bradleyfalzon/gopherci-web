@@ -2,16 +2,21 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/bradleyfalzon/gopherci-web/internal/session"
 	"github.com/bradleyfalzon/gopherci-web/internal/users"
 	"github.com/google/go-github/github"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	stripe "github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go/event"
 )
 
 type appError struct {
@@ -42,8 +47,8 @@ func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Execute handler
 	if code, err := fn(w, r); err != nil {
 		if code >= http.StatusInternalServerError {
-			logger.WithError(err).Printf("internal error type %T: %+v", err, err)
-			err = errors.New("Internal error")
+			logger.WithError(err).Errorf("internal error type %T: %+v", err, err)
+			err = errors.New("internal error")
 		}
 		errorHandler(w, r, code, err)
 	}
@@ -72,7 +77,7 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func internalError(w http.ResponseWriter, r *http.Request, err error) {
-	logger.Printf("internal error: %+v", err)
+	logger.WithError(err).Errorf("internal error: %+v", err)
 	errorHandler(w, r, http.StatusInternalServerError, errors.New("Internal Error"))
 }
 
@@ -85,11 +90,60 @@ func errorHandler(w http.ResponseWriter, r *http.Request, code int, err error) {
 		Desc   string // eg Missing key foo
 	}{fmt.Sprintf("%d - %s", code, http.StatusText(code)), strconv.Itoa(code), http.StatusText(code), err.Error()}
 
+	// TODO check accept header and respond in json if accepted instead of html
+
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(code)
 	if err := templates.ExecuteTemplate(w, "error.tmpl", page); err != nil {
 		logger.WithError(err).Error("error parsing error template")
 	}
+}
+
+// stripeEventHandler handles stripe webhooks/events.
+func stripeEventHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+	dec := json.NewDecoder(r.Body)
+	var hookEvent stripe.Event
+	if err := dec.Decode(&hookEvent); err != nil {
+		return http.StatusBadRequest, errors.New("could not decode stripe event")
+	}
+
+	// Check authenticity with stripe
+	checkedEvent, err := event.Get(hookEvent.ID, nil)
+	if err != nil {
+		// client error or event doesn't exist
+		checkedEvent = &hookEvent
+		if serr, ok := err.(*stripe.Error); ok && serr.HTTPStatusCode != http.StatusNotFound {
+			return http.StatusForbidden, errors.New("could not get stripe event")
+		}
+		logger.WithError(err).WithField("StripeEventID", hookEvent.ID).Warn("could not get stripe event")
+		return http.StatusInternalServerError, nil
+	}
+	if checkedEvent == nil {
+		// I don't think this should occur
+		logger.WithField("StripeEventID", hookEvent.ID).Error("could not verify stripe event, checked event is nil")
+		return http.StatusForbidden, nil
+	}
+
+	log := logger.WithFields(logrus.Fields{
+		"StripeEventType":   checkedEvent.Type,
+		"StripeEventID":     checkedEvent.ID,
+		"StripeEventLive":   checkedEvent.Live,
+		"StripeEventReq":    checkedEvent.Req,
+		"StripeEventUserID": checkedEvent.UserID,
+	})
+
+	switch checkedEvent.Type {
+	case "customer.subscription.deleted":
+		var sub stripe.Sub
+		err := json.Unmarshal(checkedEvent.Data.Raw, &sub)
+		if err != nil {
+			return http.StatusBadRequest, errors.New("could not unmarshal subscription event")
+		}
+		log.WithField("StripeSubID", sub.ID).WithField("StripeCustomerID", sub.Customer.ID).Infof("subscription cancelled at %v", time.Unix(sub.PeriodEnd, 0))
+	default:
+		log.Info(checkedEvent.Data.Obj)
+	}
+	return http.StatusOK, nil
 }
 
 // consoleIndex displays the console's index page
