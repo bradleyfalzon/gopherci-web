@@ -7,6 +7,22 @@ body, html {
 
 p { margin-bottom: 10px; }
 
+.early-access {
+  color: white;
+  padding: 0 5px;
+  border-radius: 5px;
+  font-size: 0.8em;
+}
+.button.is-danger {
+  background-color: #B33930;
+}
+.button.is-danger:hover {
+  color: #B33930;
+  background-color: white;
+  border: 1px solid #B33930;
+
+}
+
 .header-image {
   background-size: cover;
   background-position-y: 50%;
@@ -145,7 +161,8 @@ h4.panel-header {
 }
 
 .pricing .button.is-primary {
-  margin-top: 50px;
+  margin-top: 30px;
+  margin-bottom: 30px;
 }
 
 footer.panel-footer {
@@ -179,7 +196,6 @@ footer.panel-footer {
 .button.is-primary.is-outlined {
   background-color: white;
   color: #3069b3;
-  font-weight: bold;
   border: 1px solid #3069b3;
 }
 
@@ -205,10 +221,6 @@ footer.panel-footer {
 
 .nav-item a, a.nav-item:hover {
   color: white;
-}
-
-.button.is-gh.is-outlined {
-  background-color: white;
 }
 
 .hero .img {
@@ -237,9 +249,8 @@ footer.panel-footer {
 }
 
 .button.is-primary.is-outlined:focus, .button.is-primary.is-outlined:hover {
-  background-color: #3069b3;
-  border-color: #3069b3;
-  color: #fff;
+  border: 1px solid white;
+  background: #3069b3;
 }
 
 a {

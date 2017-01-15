@@ -1,24 +1,18 @@
 {{ template "header" . }}
 
-<style>
-
-
-
-</style>
-
-
 <header class="nav">
   <div class="container">
     <div class="nav-left">
       <a class="nav-item is-logo" href="/">Gopher<span class="is-bold">CI</span></a>
+      <span class="nav-item"><a href="#earlyaccess" class="button is-danger early-access">Early Access</a></span>
     </div>
     <div class="nav-right nav-menu">
       <a href="#more" class="nav-item">Learn More</a>
       <a href="#pricing" class="nav-item">Pricing</a>
       <a href="#features" class="nav-item">Features</a>
       <span class="nav-item">
-        <a class="button is-info is-outlined is-inverted is-gh" href="/console/">
-          <span class="icon"><i class="fa fa-github"></i></span><span>Login</span>
+        <a class="button is-primary is-outlined is-inverted is-gh" href="/console/">
+          <span class="icon"><i class="fa fa-github"></i></span><span>Log in</span>
         </a>
       </span>
     </div>
@@ -94,7 +88,7 @@
         <p>GopherCI source code is available on GitHub and licenced under <a href="https://github.com/bradleyfalzon/gopherci/blob/master/LICENSE">BSD 2-Clause</a>.</p>
         <br>
         <br>
-        <a class="button is-info is-outlined is-half" href="https://github.com/bradleyfalzon/gopherci"><span class="icon"><i class="fa fa-github"></i></span><span>Check it out!</span></a>
+        <a class="button is-primary is-outlined is-half" href="https://github.com/bradleyfalzon/gopherci"><span class="icon"><i class="fa fa-github"></i></span><span>Check it out!</span></a>
       </div>
     </div>
   </div>
@@ -120,9 +114,6 @@
           <div class="panel-block">No Organisations</div>
           <div class="panel-block">20 requests per day</div>
           <div class="panel-block">30 day free trial</div>
-          <div class="panel-block">
-            <a href="/console/" class="button is-primary is-outlined is-large">Sign up</a>
-          </div>
         </nav>
       </div>
       <div class="column is-4">
@@ -137,9 +128,6 @@
           <div class="panel-block">5 Organisations</div>
           <div class="panel-block">200 requests per day</div>
           <div class="panel-block">30 day free trial</div>
-          <div class="panel-block">
-            <a href="/console/" class="button is-primary is-outlined is-large">Sign up</a>
-          </div>
         </nav>
       </div>
       <div class="column is-4">
@@ -154,14 +142,24 @@
           <div class="panel-block"><b>Unlimited</b> Organisations</div>
           <div class="panel-block">2,000 requests per day</div>
           <div class="panel-block">30 day free trial</div>
-          <div class="panel-block">
-            <a href="/console/" class="button is-primary is-outlined is-large">Sign up</a>
-          </div>
         </nav>
       </div>
     </div>
+    <div class="columns">
+      <div class="column is-half is-offset-one-quarter has-text-centered">
+        <a class="button is-primary is-large is-outlined is-gh" href="/console/">
+            <span class="icon"><i class="fa fa-github"></i></span><span>Log in to Get Started</span>
+        </a>
+      </div>
+    </div>
+<style>
+.pricing .no-free {color: white; text-align: center;}
+.pricing .no-free a {color: white; text-decoration: underline; }
+</style>
+    <p class="no-free">There's no free hosted plan, as you are able to <a href="https://github.com/bradleyfalzon/gopherci">run your own instance</a>, although please consider the lowest plan to help fund development.</p>
   </div>
 </div>
+<a id="earlyaccess"></a>
 <div class="section section-alt open-source">
   <div class="container">
     <div class="columns">
