@@ -87,6 +87,7 @@ func main() {
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	r.Handle("/", appHandler(homeHandler))
+	r.Handle("/logout", appHandler(logoutHandler))
 	r.Handle("/stripe/event", appHandler(stripeEventHandler))
 	r.Handle("/console/", appHandler(consoleIndexHandler))
 	r.Handle("/console/install-state", appHandler(consoleInstallStateHandler))

@@ -146,7 +146,19 @@ func stripeEventHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 	return http.StatusOK, nil
 }
 
-// consoleIndex displays the console's index page
+// logoutHandler logs a user out, if logged in, and redirects to the home page.
+func logoutHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+	session := session.FromContext(r.Context())
+	if session.LoggedIn() {
+		if err := session.Delete(w); err != nil {
+			logger.WithError(err).Error("could not delete session")
+		}
+	}
+	http.Redirect(w, r, "/", http.StatusFound)
+	return 0, nil
+}
+
+// consoleIndexHandler displays the console's index page.
 func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 	type install struct {
 		AccountID      int // github accountID, may not be set on orphaned installations

@@ -287,3 +287,33 @@ func TestLoggedIn(t *testing.T) {
 		}
 	}
 }
+
+func TestDelete(t *testing.T) {
+	const sid = "7a6e02a0-5ef8-43f9-95f5-2708863cc753"
+
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal("unexpected error: ", err)
+	}
+	defer db.Close()
+
+	s := &Session{
+		db: db,
+		id: uuid.Must(uuid.Parse(sid)),
+	}
+
+	mock.ExpectExec(`DELETE FROM sessions WHERE id = \?`).
+		WithArgs(s.id).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	w := httptest.NewRecorder()
+	err = s.Delete(w)
+	if err != nil {
+		t.Fatal("Unexpected error: ", err)
+	}
+
+	have := w.Header().Get("set-cookie")
+	if want := "sid=; Path=/; Max-Age=0"; have != want {
+		t.Errorf("have %q want %q", have, want)
+	}
+}

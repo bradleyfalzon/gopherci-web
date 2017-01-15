@@ -135,3 +135,13 @@ func FromContext(ctx context.Context) *Session {
 func (s *Session) LoggedIn() bool {
 	return s.UserID != 0
 }
+
+// Delete deletes the user's sessions from the database and sets the cookie to expire.
+func (s *Session) Delete(w http.ResponseWriter) error {
+	_, err := s.db.Exec("DELETE FROM sessions WHERE id = ?", s.id)
+	if err != nil {
+		return errors.Wrap(err, "session: could not delete session from db")
+	}
+	http.SetCookie(w, &http.Cookie{Name: cookieName, Path: cookiePath, MaxAge: -1})
+	return nil
+}
