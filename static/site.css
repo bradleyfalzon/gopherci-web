@@ -31,7 +31,7 @@ p { margin-bottom: 10px; }
 
 .hero.is-primary {
   background-color: #3069b3;
-  height: 85vh;
+  height: 85vh; /* TODO should be min-height */
 }
 
 .title.is-2 {
@@ -164,6 +164,9 @@ h4.panel-header {
   margin-top: 30px;
   margin-bottom: 30px;
 }
+
+.pricing .no-free {color: white; text-align: center;}
+.pricing .no-free a {color: white; text-decoration: underline; }
 
 footer.panel-footer {
   display: block;
