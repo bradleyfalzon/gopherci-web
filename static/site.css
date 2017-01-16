@@ -31,7 +31,7 @@ p { margin-bottom: 10px; }
 
 .hero.is-primary {
   background-color: #3069b3;
-  height: 85vh; /* TODO should be min-height */
+  height: 85vh;
 }
 
 .title.is-2 {
