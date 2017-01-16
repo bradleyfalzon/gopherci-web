@@ -5,22 +5,45 @@ body, html {
   line-height: 1.6em;
 }
 
-p { margin-bottom: 10px; }
+p {
+  margin-bottom: 10px;
+}
 
-.early-access {
-  color: white;
-  padding: 0 5px;
-  border-radius: 5px;
-  font-size: 0.8em;
+@media screen and (max-width: 780px) {
+  .hero-body p {
+    font-size: 0.6em;
+    margin-bottom: 0px;
+  }
+
+  .hero .img {
+    margin-left: 50px;
+    margin-right: 50px;
+  }
+
+  a.nav-item.is-logo {
+    margin-left: 20px;
+  }
+
+  .hero div.hero-body {
+    padding-top: 0px;
+  }
+
 }
-.button.is-danger {
-  background-color: #B33930;
-}
-.button.is-danger:hover {
+
+
+.button.early-access:hover {
   color: #B33930;
   background-color: white;
   border: 1px solid #B33930;
 
+}
+
+.button.early-access {
+  background-color: #B33930;
+  color: white;
+  padding: 0 5px;
+  border-radius: 5px;
+  font-size: 0.8em;
 }
 
 .header-image {
@@ -31,7 +54,7 @@ p { margin-bottom: 10px; }
 
 .hero.is-primary {
   background-color: #3069b3;
-  height: 85vh; /* TODO should be min-height */
+  height: calc( 85vh - 53px);
 }
 
 .title.is-2 {
