@@ -165,6 +165,9 @@ h4.panel-header {
   margin-bottom: 30px;
 }
 
+.pricing .no-free {color: white; text-align: center;}
+.pricing .no-free a {color: white; text-decoration: underline; }
+
 footer.panel-footer {
   display: block;
   position: absolute;
