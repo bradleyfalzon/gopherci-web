@@ -11,7 +11,7 @@
       <a href="#pricing" class="nav-item">Pricing</a>
       <a href="#features" class="nav-item">Features</a>
       <span class="nav-item">
-        <a class="button is-primary is-outlined is-inverted is-gh" href="/console/">
+        <a class="button is-primary is-outlined is-inverted is-gh event-gh" href="/console/">
           <span class="icon"><i class="fa fa-github"></i></span><span>Log in</span>
         </a>
       </span>
@@ -41,7 +41,7 @@
 <div class="hero-cta">
   <nav class="level">
     <div class="level-item has-text-centered">
-      <a class="button is-primary is-large" href="/console/"><span class="icon"><i class="fa fa-github"></i></span><span>Start using with GitHub</span></a>
+      <a class="button is-primary is-large event-gh" href="/console/"><span class="icon"><i class="fa fa-github"></i></span><span>Start using with GitHub</span></a>
     </div>
   </nav>
 </div>
@@ -149,7 +149,7 @@
     </div>
     <div class="columns">
       <div class="column is-half is-offset-one-quarter has-text-centered">
-        <a class="button is-primary is-large is-outlined is-gh" href="/console/">
+        <a class="button is-primary is-large is-outlined is-gh event-gh" href="/console/">
             <span class="icon"><i class="fa fa-github"></i></span><span>Log in to Get Started</span>
         </a>
       </div>
@@ -195,7 +195,7 @@
                 <li>Automatically check new repositories as they're added without requiring per repository configuration.</li>
                 <li>Affordable hosted plans, that are monitored, backed up, updated and scales so you don't need to.</li>
                 <li>Adds comments to a pull request on the affected line, and only the lines that were changed.</li>
-                <li>Completely open source, GopherCI itself as well as GopherCI-web so you can improve and inspect how we manage security, payments, and contribute improvements.</li>
+                <li>Completely open source, GopherCI itself as well as GopherCI-web so you can improve and inspect how we manage security, billing, and contribute improvements.</li>
               </ul>
               <p>Planned</p>
               <ul>
@@ -288,5 +288,18 @@
     </div>
   </div>
 </div>
+
+<script>
+var ghs = document.getElementsByClassName("event-gh");
+for (var i = 0; i < ghs.length; i++) {
+    ghs[i].addEventListener("click", function() {
+        ga('send', {
+            hitType: 'event',
+            eventCategory: 'onboarding',
+            eventAction: 'click-github-login',
+        });
+    });
+}
+</script>
 
 {{ template "footer" . }}

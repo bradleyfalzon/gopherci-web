@@ -173,6 +173,7 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 		Email           string
 		Installs        []install
 		HasSubscription bool
+		NewCustomer     bool
 	}{Title: "Console"}
 
 	// Check if logged in
@@ -188,6 +189,11 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 		return http.StatusInternalServerError, err
 	}
 	page.Email = user.Email
+
+	// New customer, show them a welcome message
+	if r.FormValue("success") != "" {
+		page.NewCustomer = true
+	}
 
 	ghUser, _, err := user.GHClient.Users.Get("")
 	if err != nil {
@@ -340,15 +346,15 @@ func consoleInstallStateHandler(w http.ResponseWriter, r *http.Request) (int, er
 	return 0, nil
 }
 
-// consolePaymentsHandler manages plans.
-func consolePaymentsHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+// consoleBillingHandler manages plans.
+func consoleBillingHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 	page := struct {
 		Title            string
 		Email            string
 		StripePublishKey string
 		Subscriptions    []users.Subscription
 		HasSubscription  bool
-	}{Title: "Payments", StripePublishKey: os.Getenv("STRIPE_PUBLISH_KEY")}
+	}{Title: "Billing", StripePublishKey: os.Getenv("STRIPE_PUBLISH_KEY")}
 
 	// Check if logged in
 	// TODO this should be a part of middleware (MustBeUser)
@@ -376,15 +382,15 @@ func consolePaymentsHandler(w http.ResponseWriter, r *http.Request) (int, error)
 		}
 	}
 
-	if err := templates.ExecuteTemplate(w, "console-payments.tmpl", page); err != nil {
-		logger.WithError(err).Error("error parsing console-payments template")
+	if err := templates.ExecuteTemplate(w, "console-billing.tmpl", page); err != nil {
+		logger.WithError(err).Error("error parsing console-billing template")
 	}
 	return http.StatusOK, nil
 }
 
-// consolePaymentsProcessHandler processes the results of a payment (not the
+// consoleBillingProcessHandler processes the results of a payment (not the
 // payment itself).
-func consolePaymentsProcessHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+func consoleBillingProcessHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 	vars := mux.Vars(r)
 
 	// Check if logged in
@@ -423,12 +429,12 @@ func consolePaymentsProcessHandler(w http.ResponseWriter, r *http.Request) (int,
 
 	user.Logger.Infof("processed stripe subscription on plan %v", vars["planID"])
 
-	http.Redirect(w, r, "/console/payments", http.StatusFound)
+	http.Redirect(w, r, "/console/?success=1", http.StatusFound)
 	return 0, nil
 }
 
-// consolePaymentsCancelHandler cancels a subscription.
-func consolePaymentsCancelHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+// consoleBillingCancelHandler cancels a subscription.
+func consoleBillingCancelHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 	// Check if logged in
 	// TODO this should be a part of middleware (MustBeUser)
 	session := session.FromContext(r.Context())
@@ -469,6 +475,6 @@ func consolePaymentsCancelHandler(w http.ResponseWriter, r *http.Request) (int, 
 
 	user.Logger.Infof("cancelled stripe subscription subscriptionID %q", r.Form.Get("subscriptionID"))
 
-	http.Redirect(w, r, "/console/payments", http.StatusFound)
+	http.Redirect(w, r, "/console/billing", http.StatusFound)
 	return 0, nil
 }

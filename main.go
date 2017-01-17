@@ -91,9 +91,9 @@ func main() {
 	r.Handle("/stripe/event", appHandler(stripeEventHandler))
 	r.Handle("/console/", appHandler(consoleIndexHandler))
 	r.Handle("/console/install-state", appHandler(consoleInstallStateHandler))
-	r.Handle("/console/payments", appHandler(consolePaymentsHandler))
-	r.Handle("/console/payments/process/{planID}", appHandler(consolePaymentsProcessHandler))
-	r.Handle("/console/payments/cancel", appHandler(consolePaymentsCancelHandler))
+	r.Handle("/console/billing", appHandler(consoleBillingHandler))
+	r.Handle("/console/billing/process/{planID}", appHandler(consoleBillingProcessHandler))
+	r.Handle("/console/billing/cancel", appHandler(consoleBillingCancelHandler))
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
 
 	// TODO panic handler?

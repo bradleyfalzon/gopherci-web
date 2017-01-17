@@ -28,7 +28,7 @@
                     {{ if .Ended }}
                         {{ .CancelledAt }}
                     {{ else }}
-                        <form method="POST" action="/console/payments/cancel">
+                        <form method="POST" action="/console/billing/cancel">
                             <input type="hidden" name="subscriptionID" value="{{ .ID }}">
                             <button class="button is-danger" type="submit">Cancel</button>
                         </form>
@@ -79,7 +79,7 @@
             <tr>
                 <th></th>
                 <td>
-                    <form id="" action="/console/payments/process/PersonalMonthly" method="POST">
+                    <form class="event-stripe" action="/console/billing/process/PersonalMonthly" method="POST">
                         <script
                             src="https://checkout.stripe.com/checkout.js" class="stripe-button"
                             data-amount="499"
@@ -97,7 +97,7 @@
                     </form>
                 </td>
                 <td>
-                    <form id="" action="/console/payments/process/ProfessionalMonthly" method="POST">
+                    <form class="event-stripe" action="/console/billing/process/ProfessionalMonthly" method="POST">
                         <script
                             src="https://checkout.stripe.com/checkout.js" class="stripe-button"
                             data-amount="799"
@@ -115,7 +115,7 @@
                     </form>
                 </td>
                 <td>
-                    <form id="" action="/console/payments/process/SignificantMonthly" method="POST">
+                    <form class="event-stripe" action="/console/billing/process/SignificantMonthly" method="POST">
                         <script
                             src="https://checkout.stripe.com/checkout.js" class="stripe-button"
                             data-amount="2499"
@@ -136,5 +136,18 @@
         </tfoot>
     </table>
 {{ end }}
+
+<script>
+var els = document.getElementsByClassName("stripe-button-el");
+for (var i = 0; i < els.length; i++) {
+    els[i].addEventListener("click", function() {
+        ga('send', {
+            hitType: 'event',
+            eventCategory: 'onboarding',
+            eventAction: 'click-stripe-subscribe',
+        });
+    });
+}
+</script>
 
 {{ template "console-footer" . }}
