@@ -6,16 +6,17 @@ import (
 	"html/template"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/bradleyfalzon/gopherci-web/internal/gopherci"
 	"github.com/bradleyfalzon/gopherci-web/internal/users"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
+	"github.com/pressly/chi"
+	"github.com/pressly/chi/middleware"
 	migrate "github.com/rubenv/sql-migrate"
 )
 
@@ -84,21 +85,28 @@ func main() {
 	gciDBx := sqlx.NewDb(gciDB, os.Getenv("GCI_DB_DRIVER"))
 	gciClient = gopherci.New(gciDBx)
 
-	r := mux.NewRouter()
-	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
-	r.Handle("/", appHandler(homeHandler))
-	r.Handle("/logout", appHandler(logoutHandler))
-	r.Handle("/stripe/event", appHandler(stripeEventHandler))
-	r.Handle("/console/", appHandler(consoleIndexHandler))
-	r.Handle("/console/install-state", appHandler(consoleInstallStateHandler))
-	r.Handle("/console/billing", appHandler(consoleBillingHandler))
-	r.Handle("/console/billing/process/{planID}", appHandler(consoleBillingProcessHandler))
-	r.Handle("/console/billing/cancel", appHandler(consoleBillingCancelHandler))
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
+	r := chi.NewRouter()
+	r.Use(middleware.DefaultCompress)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.NoCache)
+	r.Use(SessionMiddleware)
+	workDir, _ := os.Getwd()
+	r.FileServer("/static", http.Dir(filepath.Join(workDir, "static")))
+	r.NotFound(notFoundHandler)
 
-	// TODO panic handler?
-	h := handlers.CombinedLoggingHandler(os.Stdout, r)
-	h = handlers.CompressHandler(h)
+	r.Get("/", homeHandler)
+	r.Get("/logout", logoutHandler)
+	r.Post("/stripe/event", stripeEventHandler)
+	r.Route("/console", func(r chi.Router) {
+		r.Use(MustBeUserMiddleware)
+		r.Get("/", consoleIndexHandler)
+		r.Post("/install-state", consoleInstallStateHandler)
+		r.Route("/billing", func(r chi.Router) {
+			r.Get("/", consoleBillingHandler)
+			r.Post("/process/:planID", consoleBillingProcessHandler)
+			r.Post("/cancel", consoleBillingCancelHandler)
+		})
+	})
 
 	// UserManager
 	switch {
@@ -108,9 +116,9 @@ func main() {
 		logger.Fatal("GITHUB_OAUTH_CLIENT_SECRET is not set")
 	}
 	um = users.NewUserManager(logger.WithField("pkg", "users"), dbx, os.Getenv("GITHUB_OAUTH_CLIENT_ID"), os.Getenv("GITHUB_OAUTH_CLIENT_SECRET"), os.Getenv("STRIPE_SECRET_KEY"))
-	r.Handle("/gh/login", appHandler(um.OAuthLoginHandler))
-	r.Handle("/gh/callback", appHandler(um.OAuthCallbackHandler))
+	r.Get("/gh/login", um.OAuthLoginHandler)
+	r.Get("/gh/callback", um.OAuthCallbackHandler)
 
 	logger.Println("Listening on", listen)
-	logger.Fatal(http.ListenAndServe(listen, h))
+	logger.Fatal(http.ListenAndServe(listen, r))
 }

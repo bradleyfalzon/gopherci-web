@@ -13,54 +13,54 @@ import (
 	"github.com/bradleyfalzon/gopherci-web/internal/session"
 	"github.com/bradleyfalzon/gopherci-web/internal/users"
 	"github.com/google/go-github/github"
-	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
+	"github.com/pressly/chi"
 	stripe "github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/event"
 )
 
-type appError struct {
-	Error   error  // Message to log
-	Message string // Message to show user (longer)
-	Code    int    // HTTP Status Code
+func SessionMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s, err := session.GetOrCreate(db, w, r)
+		if err != nil {
+			logger.WithError(err).Error("could not get session")
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		ctx := context.WithValue(r.Context(), session.CtxKey{}, s)
+		next.ServeHTTP(w, r.WithContext(ctx))
+
+		if err := s.Save(); err != nil {
+			logger.WithError(err).Error("could not save session")
+		}
+	})
 }
 
-// All handlers must have the same signature as appHandler. If any errors occur
-// handlers are expected to return an appropriate HTTP Code and an error. The
-// error is displayed back to the user. If an error is returned, no output
-// should be written to http.ResponseWriter, a error handler will handle this.
-type appHandler func(http.ResponseWriter, *http.Request) (code int, err error)
+type userCtxKey struct{}
 
-func (fn appHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Global headers
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-
-	// Get Session and store in request's context
-	s, err := session.GetOrCreate(logger.WithField("pkg", "session"), db, w, r)
-	if err != nil {
-		logger.WithError(err).Error("could not get session")
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	r = r.WithContext(context.WithValue(r.Context(), session.CtxKey{}, s))
-
-	// Execute handler
-	if code, err := fn(w, r); err != nil {
-		if code >= http.StatusInternalServerError {
-			logger.WithError(err).Errorf("internal error type %T: %+v", err, err)
-			err = errors.New("internal error")
+func MustBeUserMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		session := session.FromContext(r.Context())
+		if !session.LoggedIn() {
+			http.Redirect(w, r, "/gh/login", http.StatusFound)
+			return
 		}
-		errorHandler(w, r, code, err)
-	}
-
-	// Save session even if errors occurred
-	if err := s.Save(); err != nil {
-		logger.WithError(err).Error("could not save session")
-	}
+		user, err := um.GetUser(session.UserID)
+		if err != nil {
+			logger.WithError(err).Error("could not get user")
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		if user == nil {
+			http.Redirect(w, r, "/gh/login", http.StatusFound)
+			return
+		}
+		ctx := context.WithValue(r.Context(), userCtxKey{}, user)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
 
 // homeHandler displays the home page
-func homeHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+func homeHandler(w http.ResponseWriter, r *http.Request) {
 	page := struct {
 		Title string
 	}{"GopherCI"}
@@ -68,27 +68,25 @@ func homeHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 	if err := templates.ExecuteTemplate(w, "home.tmpl", page); err != nil {
 		logger.WithError(err).Error("error parsing home template")
 	}
-	return http.StatusOK, nil
 }
 
 // notFoundHandler displays a 404 not found error
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
-	errorHandler(w, r, http.StatusNotFound, fmt.Errorf("%v not found", r.URL))
-}
-
-func internalError(w http.ResponseWriter, r *http.Request, err error) {
-	logger.WithError(err).Errorf("internal error: %+v", err)
-	errorHandler(w, r, http.StatusInternalServerError, errors.New("Internal Error"))
+	errorHandler(w, r, http.StatusNotFound, fmt.Sprintf("%q not found", r.URL))
 }
 
 // errorHandler handles an error message, with an optional description
-func errorHandler(w http.ResponseWriter, r *http.Request, code int, err error) {
+func errorHandler(w http.ResponseWriter, r *http.Request, code int, desc string) {
 	page := struct {
 		Title  string
 		Code   string // eg 400
 		Status string // eg Bad Request
 		Desc   string // eg Missing key foo
-	}{fmt.Sprintf("%d - %s", code, http.StatusText(code)), strconv.Itoa(code), http.StatusText(code), err.Error()}
+	}{fmt.Sprintf("%d - %s", code, http.StatusText(code)), strconv.Itoa(code), http.StatusText(code), desc}
+
+	if page.Desc == "" {
+		page.Desc = http.StatusText(code)
+	}
 
 	// TODO check accept header and respond in json if accepted instead of html
 
@@ -100,28 +98,31 @@ func errorHandler(w http.ResponseWriter, r *http.Request, code int, err error) {
 }
 
 // stripeEventHandler handles stripe webhooks/events.
-func stripeEventHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+func stripeEventHandler(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	var hookEvent stripe.Event
 	if err := dec.Decode(&hookEvent); err != nil {
-		return http.StatusBadRequest, errors.New("could not decode stripe event")
+		errorHandler(w, r, http.StatusBadRequest, "could not decode stripe event")
+		return
 	}
 
 	// Check authenticity with stripe
 	checkedEvent, err := event.Get(hookEvent.ID, nil)
 	if err != nil {
 		// client error or event doesn't exist
-		checkedEvent = &hookEvent
-		if serr, ok := err.(*stripe.Error); ok && serr.HTTPStatusCode != http.StatusNotFound {
-			return http.StatusForbidden, errors.New("could not get stripe event")
+		if serr, ok := err.(*stripe.Error); ok && serr.HTTPStatusCode == http.StatusNotFound {
+			errorHandler(w, r, http.StatusForbidden, "")
+			return
 		}
 		logger.WithError(err).WithField("StripeEventID", hookEvent.ID).Warn("could not get stripe event")
-		return http.StatusInternalServerError, nil
+		errorHandler(w, r, http.StatusInternalServerError, "")
+		return
 	}
 	if checkedEvent == nil {
 		// I don't think this should occur
 		logger.WithField("StripeEventID", hookEvent.ID).Error("could not verify stripe event, checked event is nil")
-		return http.StatusForbidden, nil
+		errorHandler(w, r, http.StatusForbidden, "")
+		return
 	}
 
 	log := logger.WithFields(logrus.Fields{
@@ -137,17 +138,17 @@ func stripeEventHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 		var sub stripe.Sub
 		err := json.Unmarshal(checkedEvent.Data.Raw, &sub)
 		if err != nil {
-			return http.StatusBadRequest, errors.New("could not unmarshal subscription event")
+			errorHandler(w, r, http.StatusBadRequest, "could not unmarshal subscription event")
+			return
 		}
 		log.WithField("StripeSubID", sub.ID).WithField("StripeCustomerID", sub.Customer.ID).Infof("subscription cancelled at %v", time.Unix(sub.PeriodEnd, 0))
 	default:
 		log.Info(checkedEvent.Data.Obj)
 	}
-	return http.StatusOK, nil
 }
 
 // logoutHandler logs a user out, if logged in, and redirects to the home page.
-func logoutHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	session := session.FromContext(r.Context())
 	if session.LoggedIn() {
 		if err := session.Delete(w); err != nil {
@@ -155,11 +156,10 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 		}
 	}
 	http.Redirect(w, r, "/", http.StatusFound)
-	return 0, nil
 }
 
 // consoleIndexHandler displays the console's index page.
-func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+func consoleIndexHandler(w http.ResponseWriter, r *http.Request) {
 	type install struct {
 		AccountID      int // github accountID, may not be set on orphaned installations
 		InstallationID int
@@ -181,13 +181,10 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 	session := session.FromContext(r.Context())
 	if !session.LoggedIn() {
 		http.Redirect(w, r, "/gh/login", http.StatusFound)
-		return 0, nil
+		return
 	}
 
-	user, err := um.GetUser(session.UserID)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
+	user := r.Context().Value(userCtxKey{}).(*users.User)
 	page.Email = user.Email
 
 	// New customer, show them a welcome message
@@ -197,18 +194,24 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 
 	ghUser, _, err := user.GHClient.Users.Get("")
 	if err != nil {
-		return http.StatusInternalServerError, err
+		logger.WithError(err).Error("could not get gh user")
+		errorHandler(w, r, http.StatusInternalServerError, "")
+		return
 	}
 
 	// Get list of organisations from github api for this user
 	ghMemberships, _, err := user.GHClient.Organizations.ListOrgMemberships(&github.ListOrgMembershipsOptions{State: "active"})
 	if err != nil {
-		return http.StatusInternalServerError, err
+		logger.WithError(err).Error("could not get gh list org memberships")
+		errorHandler(w, r, http.StatusInternalServerError, "")
+		return
 	}
 
 	ei, err := user.EnabledInstallations()
 	if err != nil {
-		return http.StatusInternalServerError, err
+		logger.WithError(err).Error("could not get enabled installations")
+		errorHandler(w, r, http.StatusInternalServerError, "")
+		return
 	}
 	enabledInstallations := make(map[int]bool)
 	for _, installationID := range ei {
@@ -240,7 +243,9 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 	// Check if any installations are pending
 	gciInstalls, err := gciClient.ListInstallations(accountIDs...)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		logger.WithError(err).Error("could not list installations")
+		errorHandler(w, r, http.StatusInternalServerError, "")
+		return
 	}
 
 	// Compare User's installations with installations in GopherCI DB
@@ -282,7 +287,9 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 
 	subs, err := user.StripeSubscriptions()
 	if err != nil {
-		return http.StatusInternalServerError, err
+		logger.WithError(err).Error("could not stripe subscriptions")
+		errorHandler(w, r, http.StatusInternalServerError, "")
+		return
 	}
 	for _, sub := range subs {
 		if sub.CancelledAt.IsZero() {
@@ -293,31 +300,16 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) (int, error) {
 	if err := templates.ExecuteTemplate(w, "console-index.tmpl", page); err != nil {
 		logger.WithError(err).Error("error parsing console-index template")
 	}
-	return http.StatusOK, nil
 }
 
 // consoleInstallStateHandler enables or disabled an installation
-func consoleInstallStateHandler(w http.ResponseWriter, r *http.Request) (int, error) {
-
-	// Check if logged in
-	// TODO this should be a part of middleware (MustBeUser)
-	session := session.FromContext(r.Context())
-	if !session.LoggedIn() {
-		http.Redirect(w, r, "/", http.StatusFound)
-		return 0, nil
-	}
-
-	// TODO maybe this should be handled in MustBeUser handler
-	user, err := um.GetUser(session.UserID)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	r.ParseForm()
+func consoleInstallStateHandler(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value(userCtxKey{}).(*users.User)
 
 	i, err := strconv.ParseInt(r.FormValue("installationID"), 10, 64)
 	if err != nil {
-		return http.StatusBadRequest, err
+		errorHandler(w, r, http.StatusBadRequest, "Invalid installationID")
+		return
 	}
 	installationID := int(i)
 
@@ -329,25 +321,28 @@ func consoleInstallStateHandler(w http.ResponseWriter, r *http.Request) (int, er
 		}
 	case "disable":
 		if !user.InstallationEnabled(installationID) {
-			return http.StatusForbidden, errors.New("Installation not enabled for this user")
+			errorHandler(w, r, http.StatusForbidden, "Installation not enabled for this user")
+			return
 		}
 		err = user.DisableInstallation(installationID)
 		if err == nil {
 			err = gciClient.DisableInstallation(installationID)
 		}
 	default:
-		return http.StatusBadRequest, errors.New("Invalid state")
+		errorHandler(w, r, http.StatusBadRequest, "Invalid state")
+		return
 	}
 	if err != nil {
-		return http.StatusInternalServerError, err
+		logger.WithError(err).Error("could not change installation state")
+		errorHandler(w, r, http.StatusInternalServerError, "")
+		return
 	}
 
-	http.Redirect(w, r, "/console/", http.StatusFound)
-	return 0, nil
+	http.Redirect(w, r, "/console", http.StatusFound)
 }
 
 // consoleBillingHandler manages plans.
-func consoleBillingHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+func consoleBillingHandler(w http.ResponseWriter, r *http.Request) {
 	page := struct {
 		Title            string
 		Email            string
@@ -356,24 +351,15 @@ func consoleBillingHandler(w http.ResponseWriter, r *http.Request) (int, error) 
 		HasSubscription  bool
 	}{Title: "Billing", StripePublishKey: os.Getenv("STRIPE_PUBLISH_KEY")}
 
-	// Check if logged in
-	// TODO this should be a part of middleware (MustBeUser)
-	session := session.FromContext(r.Context())
-	if !session.LoggedIn() {
-		http.Redirect(w, r, "/", http.StatusFound)
-		return 0, nil
-	}
-
-	// TODO maybe this should be handled in MustBeUser handler
-	user, err := um.GetUser(session.UserID)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
+	user := r.Context().Value(userCtxKey{}).(*users.User)
 	page.Email = user.Email
 
+	var err error
 	page.Subscriptions, err = user.StripeSubscriptions()
 	if err != nil {
-		return http.StatusInternalServerError, err
+		logger.WithError(err).Error("could not get stripe subscriptions")
+		errorHandler(w, r, http.StatusInternalServerError, "")
+		return
 	}
 
 	for _, sub := range page.Subscriptions {
@@ -385,90 +371,72 @@ func consoleBillingHandler(w http.ResponseWriter, r *http.Request) (int, error) 
 	if err := templates.ExecuteTemplate(w, "console-billing.tmpl", page); err != nil {
 		logger.WithError(err).Error("error parsing console-billing template")
 	}
-	return http.StatusOK, nil
 }
 
 // consoleBillingProcessHandler processes the results of a payment (not the
 // payment itself).
-func consoleBillingProcessHandler(w http.ResponseWriter, r *http.Request) (int, error) {
-	vars := mux.Vars(r)
-
-	// Check if logged in
-	// TODO this should be a part of middleware (MustBeUser)
-	session := session.FromContext(r.Context())
-	if !session.LoggedIn() {
-		http.Redirect(w, r, "/", http.StatusFound)
-		return 0, nil
-	}
-
-	// TODO maybe this should be handled in MustBeUser handler
-	user, err := um.GetUser(session.UserID)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	r.ParseForm()
+func consoleBillingProcessHandler(w http.ResponseWriter, r *http.Request) {
+	var (
+		planID = chi.URLParam(r, "planID")
+		user   = r.Context().Value(userCtxKey{}).(*users.User)
+	)
 
 	// Ensure customer does not have any current subscriptions until we have the
 	// ability to prorata subscriptions.
 	subs, err := user.StripeSubscriptions()
 	if err != nil {
-		return http.StatusInternalServerError, err
+		logger.WithError(err).Error("could not get stripe subscriptions")
+		errorHandler(w, r, http.StatusInternalServerError, "")
+		return
 	}
 	for _, sub := range subs {
 		if sub.CancelledAt.IsZero() {
 			// TODO flash message
-			return http.StatusBadRequest, errors.New("active subscription already exists")
+			errorHandler(w, r, http.StatusBadRequest, "active subscription already exists")
+			return
 		}
 	}
 
-	err = user.ProcessStripePayment(r.Form.Get("stripeToken"), vars["planID"])
+	err = user.ProcessStripePayment(r.FormValue("stripeToken"), planID)
 	if err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "could not process stripe payment")
+		logger.WithError(err).Error("could not process stripe payment")
+		errorHandler(w, r, http.StatusInternalServerError, "")
+		return
 	}
 
-	user.Logger.Infof("processed stripe subscription on plan %v", vars["planID"])
+	user.Logger.Infof("processed stripe subscription on plan %q", planID)
 
-	http.Redirect(w, r, "/console/?success=1", http.StatusFound)
-	return 0, nil
+	http.Redirect(w, r, "/console?success=1", http.StatusFound)
 }
 
 // consoleBillingCancelHandler cancels a subscription.
-func consoleBillingCancelHandler(w http.ResponseWriter, r *http.Request) (int, error) {
-	// Check if logged in
-	// TODO this should be a part of middleware (MustBeUser)
-	session := session.FromContext(r.Context())
-	if !session.LoggedIn() {
-		http.Redirect(w, r, "/", http.StatusFound)
-		return 0, nil
-	}
+func consoleBillingCancelHandler(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value(userCtxKey{}).(*users.User)
 
-	// TODO maybe this should be handled in MustBeUser handler
-	user, err := um.GetUser(session.UserID)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	r.ParseForm()
 	subs, err := user.StripeSubscriptions()
 	if err != nil {
-		return http.StatusInternalServerError, err
+		logger.WithError(err).Error("could not get stripe subscriptions")
+		errorHandler(w, r, http.StatusInternalServerError, "")
+		return
 	}
 	var sub *users.Subscription
 	for _, s := range subs {
-		if s.ID == r.Form.Get("subscriptionID") {
+		if s.ID == r.FormValue("subscriptionID") {
 			sub = &s
 			break
 		}
 	}
 	if sub == nil {
 		// TODO flash message to show user we couldn't find subscription ID
-		return http.StatusBadRequest, errors.New("could not find subscription ID")
+		errorHandler(w, r, http.StatusBadRequest, "could not find subscription ID")
+		return
 	}
 
 	err = user.CancelStripeSubscription(r.Form.Get("subscriptionID"), true)
 	if err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "could not process stripe payment")
+		logger.WithError(err).Error("could not process stripe payment")
+		errorHandler(w, r, http.StatusInternalServerError, "")
+		return
 	}
 
 	// TODO disable all integrations at sub.PeriodEnd #7
@@ -476,5 +444,4 @@ func consoleBillingCancelHandler(w http.ResponseWriter, r *http.Request) (int, e
 	user.Logger.Infof("cancelled stripe subscription subscriptionID %q", r.Form.Get("subscriptionID"))
 
 	http.Redirect(w, r, "/console/billing", http.StatusFound)
-	return 0, nil
 }

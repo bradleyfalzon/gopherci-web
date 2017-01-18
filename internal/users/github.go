@@ -3,7 +3,6 @@ package users
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 
@@ -21,51 +20,59 @@ var githubBaseURL = "https://api.github.com/"
 
 // OAuthLoginHandler starts the initial oauth login flow by redirecting the
 // user to GitHub for authentication and authorisation our app.
-func (um *UserManager) OAuthLoginHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+func (um *UserManager) OAuthLoginHandler(w http.ResponseWriter, r *http.Request) {
 	session := session.FromContext(r.Context())
 	session.GitHubOAuthState = uuid.New()
 
 	url := um.oauthConf.AuthCodeURL(session.GitHubOAuthState.String(), oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-	return 0, nil
 }
 
 // OAuthCallbackHandler handles the callback after GitHub authentication and
 // persists the credentials to storage for use later.
-func (um *UserManager) OAuthCallbackHandler(w http.ResponseWriter, r *http.Request) (int, error) {
+func (um *UserManager) OAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	session := session.FromContext(r.Context())
 
 	if session.GitHubOAuthState == uuid.Nil {
-		return http.StatusBadRequest, errors.New("github: invalid oauth state from session, it is nil")
+		um.logger.Error("github: invalid oauth state from session, it is nil")
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 
 	state := r.FormValue("state")
 	if state != session.GitHubOAuthState.String() {
-		return http.StatusBadRequest, fmt.Errorf("github: invalid oauth state from session, have %q, want %q", state, session.GitHubOAuthState.String())
+		um.logger.Errorf("github: invalid oauth state from session, have %q, want %q", state, session.GitHubOAuthState.String())
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 	session.GitHubOAuthState = uuid.Nil
 
 	code := r.FormValue("code")
 	token, err := um.oauthConf.Exchange(oauth2.NoContext, code)
 	if err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "github: oauthConf exchange() error")
+		um.logger.WithError(err).Error("github: oauthConf exchange() error")
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	client := NewClient(um.oauthConf, token)
 	ghUser, _, err := client.Users.Get("")
 	if err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "github: could not get user")
+		um.logger.WithError(err).Error("github: could not get user")
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	// Set session to this user
 	session.UserID, err = um.GitHubLogin(*ghUser.ID, token)
 	if err != nil {
-		return http.StatusInternalServerError, errors.Wrap(err, "github: could not set github user in db")
+		um.logger.WithError(err).Error("github: could not set github user in db")
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 	um.logger.WithField("userID", session.UserID).Printf("github: logged in as GitHub user: %s", *ghUser.Login)
 
-	http.Redirect(w, r, "/console/", http.StatusTemporaryRedirect)
-	return 0, nil
+	http.Redirect(w, r, "/console", http.StatusTemporaryRedirect)
 }
 
 // NewClient returns a github.Client using oauthconf and token.

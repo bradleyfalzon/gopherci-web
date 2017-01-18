@@ -43,14 +43,13 @@ type Session struct {
 // GetOrCreate reads the http.Request looking for a session ID and attempts to
 // load this sesstion from the database. Most errors are handled by creating a
 // new session. Call Save() on the session to persist to db.
-func GetOrCreate(logger *logrus.Entry, db *sql.DB, w http.ResponseWriter, r *http.Request) (*Session, error) {
+func GetOrCreate(db *sql.DB, w http.ResponseWriter, r *http.Request) (*Session, error) {
 	// Get session id from cookie
 	cookie, err := r.Cookie(cookieName)
 	switch {
 	case err == http.ErrNoCookie:
 		return create(db, w), nil
 	case err != nil:
-		logger.WithError(err).Warn("unexpected error reading cookie")
 		return create(db, w), nil
 	}
 
@@ -62,7 +61,6 @@ func GetOrCreate(logger *logrus.Entry, db *sql.DB, w http.ResponseWriter, r *htt
 
 	id, err := uuid.Parse(cookie.Value)
 	if err != nil {
-		logger.WithError(err).Warnf("could not parse cookie %q", cookie.Value)
 		return create(db, w), nil
 	}
 
@@ -77,7 +75,6 @@ func GetOrCreate(logger *logrus.Entry, db *sql.DB, w http.ResponseWriter, r *htt
 
 	var session Session
 	if err := json.Unmarshal(jsonData, &session); err != nil {
-		logger.WithError(err).Printf("could not unmarshal session id %q (creating new one instead)", cookie.Value)
 		return create(db, w), nil
 	}
 	session.db = db
