@@ -1,0 +1,31 @@
+
+
+.nav {
+    background: #3069b3;
+}
+
+.nav-item { color: white; }
+a.nav-item { color: white; }
+a.nav-item:hover { color: white; text-decoration: underline; }
+
+.is-brand {
+    font-size: 26px;
+    font-weight: 400;
+}
+.is-brand .is-bold {
+    font-weight: bold;
+}
+
+.notification.is-warning {
+    background: rgba(48, 105, 179, 0.25);
+}
+.notification.is-success {
+    background: #3273dc;
+}
+
+a { color: #3069b3; }
+a:hover { text-decoration: underline; }
+
+.menu-list a:hover { color: #3069b3; }
+.menu-list a { font-size: 16px; }
+.menu-label { font-size: 20px; padding-left: 10px; }

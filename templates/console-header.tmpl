@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="x-ua-compatible" content="ie=edge">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.2.3/css/bulma.min.css" integrity="sha256-F7gqKszCwmz8vhiti+AICU8dLfIEpxzPVihhhGfbbKg=" crossorigin="anonymous" />
+        <link rel="stylesheet" href="/static/console.css" />
         <link rel="icon" type="image/png" href="/static/favicon-32x32.png" sizes="32x32" />
         <link rel="icon" type="image/png" href="/static/favicon-16x16.png" sizes="16x16" />
         <title>{{ if .Title }}{{ .Title }} - {{ end }}GopherCI</title>
@@ -12,10 +13,10 @@
     <body>
 		<header>
 			<nav class="nav has-shadow">
-				<div class="nav-left"><a href="/" class="nav-item is-brand">GopherCI</a></div>
+                <div class="nav-left"><a href="/" class="nav-item is-brand">Gopher<span class="is-bold">CI</span></a></div>
 				<div class="nav-right nav-menu">
 					<span class="nav-item">{{ .Email }}</span>
-					<span class="nav-item"><a href="/logout">Logout</a></span>
+					<a class="nav-item" href="/logout">Logout</a>
 				</div>
 			</nav>
 		</header>
