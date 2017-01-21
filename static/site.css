@@ -34,6 +34,14 @@ p { margin-bottom: 10px; }
   height: 85vh;
 }
 
+@media screen and (max-height: 800px) {
+    /* allow section to grow larger for text to fit vertically */
+    .hero.is-primary {
+        min-height: 85vh;
+        height: initial;
+    }
+}
+
 .title.is-2 {
   font-size: 60px;
 }
