@@ -108,7 +108,12 @@ func (u *User) EnabledInstallations() ([]int, error) {
 }
 
 func (u *User) ProcessStripePayment(token, plan string) error {
-	if u.StripeCustomerID != "" {
+	// 2017-01-22, we've switched from AUD to USD currency in stripe, so existing
+	// customers need a new stripe customer ID as stripe won't accept a single
+	// customer with multiple currencies. So create a new stripe customer for
+	// these users. We can remove the "u.UserID > 17"  condition once everyone is
+	// off of the PersonalMonthly plan. See commit message for more information.
+	if u.StripeCustomerID != "" && u.UserID > 17 {
 		// TODO this should upgrade the existing plan (prorata) #8
 		_, err := sub.New(&stripe.SubParams{
 			Customer: u.StripeCustomerID,
