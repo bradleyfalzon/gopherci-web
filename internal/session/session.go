@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
@@ -29,11 +28,10 @@ type CtxKey struct{}
 // marshalled into a []byte storage using json, so some restrictions such as
 // only exported members are saved apply.
 type Session struct {
-	logger  *logrus.Entry // structured logger
-	db      *sql.DB       // db handler
-	id      uuid.UUID     // session ID
-	expires time.Time     // time session should expire, only set on new sessions
-	json    []byte        // json session from db, used to check if changes made
+	db      *sql.DB   // db handler
+	id      uuid.UUID // session ID
+	expires time.Time // time session should expire, only set on new sessions
+	json    []byte    // json session from db, used to check if changes made
 
 	UserID           int       // Our User ID
 	GitHubID         int       // User's GitHub ID

@@ -31,10 +31,7 @@ func TestOAuthLoginHandler(t *testing.T) {
 	um := NewUserManager(logger, nil, "id", "secret", "stripeKey")
 	um.oauthConf.Endpoint.AuthURL = "http://example.com"
 	um.oauthConf.Endpoint.TokenURL = ""
-	_, err := um.OAuthLoginHandler(w, r)
-	if err != nil {
-		t.Fatal("unexpected error: ", err)
-	}
+	um.OAuthLoginHandler(w, r)
 
 	// Expect a redirect (this is not a great test)
 	want := "http://example.com?access_type=online&client_id=id&response_type=code&scope=user+read%3Aorg&state="
@@ -96,10 +93,7 @@ func TestOAuthCallbackHandler(t *testing.T) {
 	um.overwriteBaseURL = ts.URL
 	um.oauthConf.Endpoint.AuthURL = ""
 	um.oauthConf.Endpoint.TokenURL = ts.URL
-	_, err := um.OAuthCallbackHandler(w, r)
-	if err != nil {
-		t.Fatal("unexpected error: ", err)
-	}
+	um.OAuthCallbackHandler(w, r)
 
 	// Expect a redirect
 	if w.Result().Header.Get("Location") == "" {
