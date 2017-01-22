@@ -52,9 +52,9 @@
         <tbody>
             <tr>
                 <th>Price</th>
-                <td>$AUD 4.99/Month</td>
-                <td>$AUD 9.99/Month</td>
-                <td>$AUD 34.99/Month</td>
+                <td>$USD 3.99/Month</td>
+                <td>$USD 7.99/Month</td>
+                <td>$USD 29.99/Month</td>
             </tr>
             <tr>
                 <th>Organisations</th>
@@ -63,7 +63,7 @@
                 <td>Unlimited</td>
             </tr>
             <tr>
-                <th>Requests per day</th>
+                <th>Builds per day</th>
                 <td>10</td>
                 <td>50</td>
                 <td>200</td>
@@ -79,10 +79,10 @@
             <tr>
                 <th></th>
                 <td>
-                    <form class="event-stripe" action="/console/billing/process/PersonalMonthly" method="POST">
+                    <form class="event-stripe" action="/console/billing/process/PersonalMonthlyUSD" method="POST">
                         <script
                             src="https://checkout.stripe.com/checkout.js" class="stripe-button"
-                            data-amount="499"
+                            data-amount="399"
                             data-description="Personal Monthly"
                             data-name="gopherci.io"
                             data-key="{{ .StripePublishKey }}"
@@ -92,12 +92,12 @@
                             data-panel-label="Subscribe"
                             data-label="Subscribe"
                             data-email="{{ .Email }}"
-                            data-currency="aud">
+                            data-currency="usd">
                         </script>
                     </form>
                 </td>
                 <td>
-                    <form class="event-stripe" action="/console/billing/process/ProfessionalMonthly" method="POST">
+                    <form class="event-stripe" action="/console/billing/process/ProfessionalMonthlyUSD" method="POST">
                         <script
                             src="https://checkout.stripe.com/checkout.js" class="stripe-button"
                             data-amount="799"
@@ -110,15 +110,15 @@
                             data-panel-label="Subscribe"
                             data-label="Subscribe"
                             data-email="{{ .Email }}"
-                            data-currency="aud">
+                            data-currency="usd">
                         </script>
                     </form>
                 </td>
                 <td>
-                    <form class="event-stripe" action="/console/billing/process/SignificantMonthly" method="POST">
+                    <form class="event-stripe" action="/console/billing/process/SignificantMonthlyUSD" method="POST">
                         <script
                             src="https://checkout.stripe.com/checkout.js" class="stripe-button"
-                            data-amount="2499"
+                            data-amount="2999"
                             data-description="Significant Contributor Monthly"
                             data-name="gopherci.io"
                             data-key="{{ .StripePublishKey }}"
@@ -128,7 +128,7 @@
                             data-panel-label="Subscribe"
                             data-label="Subscribe"
                             data-email="{{ .Email }}"
-                            data-currency="aud">
+                            data-currency="usd">
                         </script>
                     </form>
                 </td>
