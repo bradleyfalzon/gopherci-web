@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/bradleyfalzon/gopherci-web/internal/commands"
 	"github.com/bradleyfalzon/gopherci-web/internal/gopherci"
 	"github.com/bradleyfalzon/gopherci-web/internal/users"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
-	"github.com/pkg/errors"
 	"github.com/pressly/chi"
 	"github.com/pressly/chi/middleware"
 	migrate "github.com/rubenv/sql-migrate"
@@ -29,15 +29,10 @@ var (
 )
 
 func main() {
-	logger.Println("Starting GopherCI-web")
 
 	_ = godotenv.Load() // .env is not critical
 
 	listen := os.Getenv("HTTP_LISTEN")
-
-	logger.Printf("Connecting to %q db name: %q, username: %q, host: %q, port: %q",
-		os.Getenv("DB_DRIVER"), os.Getenv("DB_DATABASE"), os.Getenv("DB_USERNAME"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"),
-	)
 
 	// TODO strict mode
 	dsn := fmt.Sprintf(`%s:%s@tcp(%s:%s)/%s?charset=utf8&collation=utf8_unicode_ci&timeout=6s&time_zone='%%2B00:00'&parseTime=true`,
@@ -48,22 +43,29 @@ func main() {
 	if err != nil {
 		logger.WithError(err).Fatal("Error setting up DB")
 	}
+	if err := db.Ping(); err != nil {
+		logger.WithError(err).Fatalf("Error pinging %q db name: %q, username: %q, host: %q, port: %q",
+			os.Getenv("DB_DRIVER"), os.Getenv("DB_DATABASE"), os.Getenv("DB_USERNAME"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"),
+		)
+	}
 	dbx := sqlx.NewDb(db, os.Getenv("DB_DRIVER"))
 
-	// Do DB migrations
-	migrations := &migrate.FileMigrationSource{Dir: "migrations"}
-	migrate.SetTable("migrations-web")
-	direction := migrate.Up
-	migrateMax := 0
-	if len(os.Args) > 1 && os.Args[1] == "down" {
-		direction = migrate.Down
-		migrateMax = 1
+	// Check commands
+	cmd := commands.NewCommand()
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "billing:check":
+			cmd.BillingCheck(os.Getenv("STRIPE_SECRET_KEY"))
+		case "migrate:rollback":
+			cmd.Migrate(db, os.Getenv("DB_DRIVER"), migrate.Down)
+		default:
+			logger.Fatalf("Unknown command %q", os.Args[1])
+		}
+		os.Exit(0)
 	}
-	n, err := migrate.ExecMax(db, os.Getenv("DB_DRIVER"), migrations, direction, migrateMax)
-	logger.Printf("Applied %d migrations to database", n)
-	if err != nil {
-		logger.Fatal(errors.Wrap(err, "could not execute all migrations"))
-	}
+	cmd.Migrate(db, os.Getenv("DB_DRIVER"), migrate.Up) // Always migrate up
+
+	logger.Println("Starting GopherCI-web")
 
 	// Initialise html templates
 	if templates, err = template.ParseGlob("templates/*.tmpl"); err != nil {
