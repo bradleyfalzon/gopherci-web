@@ -29,7 +29,7 @@ func NewUserManager(logger *logrus.Entry, db *sqlx.DB, clientID, clientSecret, s
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
 			Endpoint:     ghoauth.Endpoint,
-			Scopes:       []string{"user", "read:org"},
+			Scopes:       []string{"user:email", "read:org"},
 		},
 	}
 }

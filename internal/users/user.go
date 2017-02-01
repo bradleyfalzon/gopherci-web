@@ -27,7 +27,7 @@ type User struct {
 	UserID           int    `db:"id"`
 	Email            string `db:"email"`
 	GitHubID         int    `db:"github_id"`
-	GitHubToken      []byte `db:"github_token"`
+	GitHubToken      []byte `db:"github_token"` // nil if none assigned to user
 	StripeCustomerID string `db:"stripe_customer_id"`
 }
 
@@ -42,12 +42,17 @@ func GetUser(logger *logrus.Entry, db *sqlx.DB, oauthConf *oauth2.Config, userID
 	case err != nil:
 		return nil, errors.Wrap(err, "could not select from users")
 	}
+	// GitHubToken is nil if no tokens are assigned to the user, in that case
+	// we'll provide an empty token to GHClient let it handle the inevitable
+	// authentication error. The callers can handle that error themselves (such
+	// as reestablishing the oauth flow).
 	var token oauth2.Token
-	err = json.Unmarshal(user.GitHubToken, &token)
-	if err != nil {
-		return nil, err
+	if user.GitHubToken != nil {
+		if err := json.Unmarshal(user.GitHubToken, &token); err != nil {
+			return nil, err
+		}
+		user.GitHubToken = nil
 	}
-	user.GitHubToken = nil
 	user.GHClient = NewClient(oauthConf, &token)
 	user.Logger = logger.WithField("userID", user.UserID)
 	return user, nil

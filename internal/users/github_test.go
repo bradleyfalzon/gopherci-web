@@ -34,7 +34,7 @@ func TestOAuthLoginHandler(t *testing.T) {
 	um.OAuthLoginHandler(w, r)
 
 	// Expect a redirect (this is not a great test)
-	want := "http://example.com?access_type=online&client_id=id&response_type=code&scope=user+read%3Aorg&state="
+	want := "http://example.com?access_type=online&client_id=id&response_type=code&scope=user%3Aemail+read%3Aorg&state="
 	if !strings.HasPrefix(w.Result().Header.Get("Location"), want) {
 		t.Errorf("Location header does not have expected prefix\nhave: %v\nwant: %v", w.Result().Header.Get("Location"), want)
 	}
