@@ -92,7 +92,6 @@ func main() {
 	r.Use(middleware.DefaultCompress)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.NoCache)
-	r.Use(middleware.DefaultLogger)
 	r.Use(SessionMiddleware)
 	workDir, _ := os.Getwd()
 	r.FileServer("/static", http.Dir(filepath.Join(workDir, "static")))
