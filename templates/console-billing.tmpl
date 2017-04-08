@@ -13,7 +13,6 @@
                 <th>Name</th>
                 <th>Amount</th>
                 <th>Start</th>
-                <th>Period End</th>
                 <th>Cancelled</th>
             </tr>
         </thead>
@@ -23,7 +22,6 @@
                 <td>{{ .Name }}</td>
                 <td>{{ .AmountDisplay }} per {{ .Interval }}</td>
                 <td>{{ .StartedAt }}</td>
-                <td>{{ .PeriodEndAt }}</td>
                 <td>
                     {{ if .Ended }}
                         {{ .CancelledAt }}
@@ -39,6 +37,66 @@
         </tbody>
     </table>
 {{ end }}
+
+<h2 class="title is-3">Coupons</h2>
+
+{{ if not .IsStripeCustomer }}
+    <p class="notification">Create a subscription to apply a coupon.</p>
+{{ else }}
+    {{ if .Discount }}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Coupon</th>
+                    <th>Start</th>
+                    <th>Ends</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ .Discount.Description }}</td>
+                    <td>{{ .Discount.StartedAt }}</td>
+                    <td>{{ .Discount.EndedAt }}</td>
+                </tr>
+            </tbody>
+        </table>
+    {{ else  }}
+        <form method="POST" action="/console/billing/coupon">
+			<div class="field has-addons">
+				<p class="control">
+					<input class="input" type="text" name="couponID" placeholder="Coupon Code">
+				</p>
+				<p class="control">
+					<button class="button is-info" type="submit">Add</button>
+				</p>
+			</div>
+        </form>
+    {{ end  }}
+{{ end }}
+
+<h2 class="title is-3">Upcoming Invoice</h2>
+
+{{ if not .UpcomingInvoice }}
+    <p class="notification">No upcoming invoices.</p>
+{{ else }}
+	{{ with .UpcomingInvoice }}
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Date</th>
+					<th>Amount</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>{{ .DueDate }}</td>
+					<td>{{ .AmountDisplay }}</td>
+				</tr>
+			</tbody>
+		</table>
+	{{ end }}
+{{ end }}
+
 
 <h2 class="title is-3">Choose Plan <img src="https://stripe.com/img/about/logos/badge/solid-dark.svg" class="is-pulled-right"></h2>
 

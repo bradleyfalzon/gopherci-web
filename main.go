@@ -107,6 +107,7 @@ func main() {
 		r.Route("/billing", func(r chi.Router) {
 			r.Get("/", consoleBillingHandler)
 			r.Post("/process/:planID", consoleBillingProcessHandler)
+			r.Post("/coupon", consoleBillingCouponHandler)
 			r.Post("/cancel", consoleBillingCancelHandler)
 		})
 	})
