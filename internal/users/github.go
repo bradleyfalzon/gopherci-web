@@ -1,6 +1,7 @@
 package users
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -56,7 +57,7 @@ func (um *UserManager) OAuthCallbackHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	client := NewClient(um.oauthConf, token)
-	ghUser, _, err := client.Users.Get("")
+	ghUser, _, err := client.Users.Get(r.Context(), "")
 	if err != nil {
 		um.logger.WithError(err).Error("github: could not get user")
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -64,7 +65,7 @@ func (um *UserManager) OAuthCallbackHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Set session to this user
-	session.UserID, err = um.GitHubLogin(*ghUser.ID, token)
+	session.UserID, err = um.GitHubLogin(r.Context(), *ghUser.ID, token)
 	if err != nil {
 		um.logger.WithError(err).Error("github: could not set github user in db")
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -89,13 +90,13 @@ func NewClient(oauthConf *oauth2.Config, token *oauth2.Token) *github.Client {
 // GitHubLogin assigns the token to an existing user with the given githubID,
 // if the user does not exist, the user is created. If an error occurs err is
 // non-nil, else the userID of the user is returned.
-func (um *UserManager) GitHubLogin(githubID int, token *oauth2.Token) (userID int, err error) {
+func (um *UserManager) GitHubLogin(ctx context.Context, githubID int, token *oauth2.Token) (userID int, err error) {
 	jsonToken, err := json.Marshal(token)
 	if err != nil {
 		return 0, errors.Wrap(err, "could not marshal oauth2.token")
 	}
 
-	email, err := um.getGitHubEmail(token)
+	email, err := um.getGitHubEmail(ctx, token)
 	if email == "" {
 		return 0, errors.New("could not get user's primary verified email from GitHub")
 	}
@@ -127,9 +128,9 @@ func (um *UserManager) GitHubLogin(githubID int, token *oauth2.Token) (userID in
 
 // getGetHubEmail returns the user's primary and verified email address, or
 // blank if none found, or an error if an error occurred.
-func (um *UserManager) getGitHubEmail(token *oauth2.Token) (string, error) {
+func (um *UserManager) getGitHubEmail(ctx context.Context, token *oauth2.Token) (string, error) {
 	client := NewClient(um.oauthConf, token)
-	emails, _, err := client.Users.ListEmails(nil)
+	emails, _, err := client.Users.ListEmails(ctx, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "error getting email for new user")
 	}

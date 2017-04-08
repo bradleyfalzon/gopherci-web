@@ -192,7 +192,7 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) {
 		page.NewCustomer = true
 	}
 
-	ghUser, _, err := user.GHClient.Users.Get("")
+	ghUser, _, err := user.GHClient.Users.Get(r.Context(), "")
 	if err != nil {
 		logger.WithError(err).Info("could not get github user, reattempting oauth flow")
 		http.Redirect(w, r, "/gh/login", http.StatusFound)
@@ -200,7 +200,7 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get list of organisations from github api for this user
-	ghMemberships, _, err := user.GHClient.Organizations.ListOrgMemberships(&github.ListOrgMembershipsOptions{State: "active"})
+	ghMemberships, _, err := user.GHClient.Organizations.ListOrgMemberships(r.Context(), &github.ListOrgMembershipsOptions{State: "active"})
 	if err != nil {
 		logger.WithError(err).Info("could not get github list org memberships, reattempting oauth flow")
 		http.Redirect(w, r, "/gh/login", http.StatusFound)

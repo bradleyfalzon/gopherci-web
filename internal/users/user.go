@@ -1,6 +1,7 @@
 package users
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -60,8 +61,8 @@ func GetUser(logger *logrus.Entry, db *sqlx.DB, oauthConf *oauth2.Config, userID
 
 // GitHubListOrgMembershipsActive returns active
 // https://godoc.org/github.com/google/go-github/github#OrganizationsService.ListOrgMemberships
-func (u *User) GitHubListOrgMembershipsActive() ([]*github.Membership, error) {
-	memberships, _, err := u.GHClient.Organizations.ListOrgMemberships(&github.ListOrgMembershipsOptions{State: "active"})
+func (u *User) GitHubListOrgMembershipsActive(ctx context.Context) ([]*github.Membership, error) {
+	memberships, _, err := u.GHClient.Organizations.ListOrgMemberships(ctx, &github.ListOrgMembershipsOptions{State: "active"})
 	if err != nil {
 		return nil, err
 	}

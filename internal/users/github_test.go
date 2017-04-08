@@ -140,7 +140,7 @@ func TestGitHubLogin_new(t *testing.T) {
 		WithArgs(email, githubID, []byte(`{"access_token":"tkn","expiry":"0001-01-01T00:00:00Z"}`)).
 		WillReturnResult(sqlmock.NewResult(int64(wantUserID), 1))
 
-	userID, err := um.GitHubLogin(githubID, token)
+	userID, err := um.GitHubLogin(context.Background(), githubID, token)
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 	}
@@ -180,7 +180,7 @@ func TestGitHubLogin_update(t *testing.T) {
 		WithArgs(email, []byte(`{"access_token":"a","expiry":"0001-01-01T00:00:00Z"}`), wantUserID).
 		WillReturnResult(sqlmock.NewResult(int64(wantUserID), 1))
 
-	userID, err := um.GitHubLogin(githubID, token)
+	userID, err := um.GitHubLogin(context.Background(), githubID, token)
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 	}
@@ -201,7 +201,7 @@ func TestGitHubLogin_errSelect(t *testing.T) {
 
 	mock.ExpectQuery("SELECT .*").WillReturnError(errors.New("some error"))
 
-	_, err = um.GitHubLogin(1, &oauth2.Token{})
+	_, err = um.GitHubLogin(context.Background(), 1, &oauth2.Token{})
 	if err == nil {
 		t.Fatal("expected error got nil")
 	}
@@ -219,7 +219,7 @@ func TestGitHubLogin_errInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(sql.ErrNoRows)
 	mock.ExpectExec("INSERT INTO users .*").WillReturnError(errors.New("some error"))
 
-	_, err = um.GitHubLogin(1, &oauth2.Token{})
+	_, err = um.GitHubLogin(context.Background(), 1, &oauth2.Token{})
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -237,7 +237,7 @@ func TestGitHubLogin_errUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectExec("UPDATE users .*").WillReturnError(errors.New("some error"))
 
-	_, err = um.GitHubLogin(1, &oauth2.Token{})
+	_, err = um.GitHubLogin(context.Background(), 1, &oauth2.Token{})
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -273,7 +273,7 @@ func TestGetGitHubEmail(t *testing.T) {
 		githubBaseURL = ts.URL
 
 		um := NewUserManager(logger, nil, "", "", "stripeKey")
-		have, err := um.getGitHubEmail(&oauth2.Token{AccessToken: "a"})
+		have, err := um.getGitHubEmail(context.Background(), &oauth2.Token{AccessToken: "a"})
 		if err != nil {
 			t.Fatal("unexpected error:", err)
 		}
