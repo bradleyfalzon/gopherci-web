@@ -285,15 +285,18 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	subs, err := user.StripeSubscriptions()
-	if err != nil {
-		logger.WithError(err).Error("could not stripe subscriptions")
+	customer, err := user.StripeCustomer()
+	switch {
+	case err != nil:
+		user.Logger.WithError(err).Error("could not get stripe customer")
 		errorHandler(w, r, http.StatusInternalServerError, "")
 		return
-	}
-	for _, sub := range subs {
-		if sub.CancelledAt.IsZero() {
-			page.HasSubscription = true
+	case customer != nil:
+		subs := user.StripeSubscriptions(customer)
+		for _, sub := range subs {
+			if sub.CancelledAt.IsZero() {
+				page.HasSubscription = true
+			}
 		}
 	}
 
@@ -349,23 +352,36 @@ func consoleBillingHandler(w http.ResponseWriter, r *http.Request) {
 		StripePublishKey string
 		Subscriptions    []users.Subscription
 		HasSubscription  bool
+		IsStripeCustomer bool
+		UpcomingInvoice  *users.Invoice
+		Discount         *users.Discount
 	}{Title: "Billing", StripePublishKey: os.Getenv("STRIPE_PUBLISH_KEY")}
 
 	user := r.Context().Value(userCtxKey{}).(*users.User)
 	page.Email = user.Email
 
-	var err error
-	page.Subscriptions, err = user.StripeSubscriptions()
-	if err != nil {
-		logger.WithError(err).Error("could not get stripe subscriptions")
+	customer, err := user.StripeCustomer()
+	switch {
+	case err != nil:
+		user.Logger.WithError(err).Error("could not get stripe customer")
 		errorHandler(w, r, http.StatusInternalServerError, "")
 		return
+	case customer != nil:
+		page.IsStripeCustomer = true
+		page.Discount = user.StripeDiscount(customer)
+		page.Subscriptions = user.StripeSubscriptions(customer)
+		for _, sub := range page.Subscriptions {
+			if sub.CancelledAt.IsZero() {
+				page.HasSubscription = true
+			}
+		}
 	}
 
-	for _, sub := range page.Subscriptions {
-		if sub.CancelledAt.IsZero() {
-			page.HasSubscription = true
-		}
+	page.UpcomingInvoice, err = user.StripeUpcomingInvoice()
+	if err != nil {
+		user.Logger.WithError(err).Error("could not get upcoming invoice for customer")
+		errorHandler(w, r, http.StatusInternalServerError, "")
+		return
 	}
 
 	if err := templates.ExecuteTemplate(w, "console-billing.tmpl", page); err != nil {
@@ -381,19 +397,22 @@ func consoleBillingProcessHandler(w http.ResponseWriter, r *http.Request) {
 		user   = r.Context().Value(userCtxKey{}).(*users.User)
 	)
 
-	// Ensure customer does not have any current subscriptions until we have the
-	// ability to prorata subscriptions.
-	subs, err := user.StripeSubscriptions()
-	if err != nil {
-		logger.WithError(err).Error("could not get stripe subscriptions")
+	customer, err := user.StripeCustomer()
+	switch {
+	case err != nil:
+		user.Logger.WithError(err).Error("could not get stripe customer")
 		errorHandler(w, r, http.StatusInternalServerError, "")
 		return
-	}
-	for _, sub := range subs {
-		if sub.CancelledAt.IsZero() {
-			// TODO flash message
-			errorHandler(w, r, http.StatusBadRequest, "active subscription already exists")
-			return
+	case customer == nil:
+		// Ensure customer does not have any current subscriptions until we have the
+		// ability to prorata subscriptions.
+		subs := user.StripeSubscriptions(customer)
+		for _, sub := range subs {
+			if sub.CancelledAt.IsZero() {
+				// TODO flash message
+				errorHandler(w, r, http.StatusBadRequest, "active subscription already exists")
+				return
+			}
 		}
 	}
 
@@ -413,12 +432,18 @@ func consoleBillingProcessHandler(w http.ResponseWriter, r *http.Request) {
 func consoleBillingCancelHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value(userCtxKey{}).(*users.User)
 
-	subs, err := user.StripeSubscriptions()
-	if err != nil {
-		logger.WithError(err).Error("could not get stripe subscriptions")
+	customer, err := user.StripeCustomer()
+	switch {
+	case err != nil:
+		user.Logger.WithError(err).Error("could not get stripe customer")
 		errorHandler(w, r, http.StatusInternalServerError, "")
 		return
+	case customer == nil:
+		errorHandler(w, r, http.StatusBadRequest, "Not a stripe customer")
+		return
 	}
+
+	subs := user.StripeSubscriptions(customer)
 	var sub *users.Subscription
 	for _, s := range subs {
 		if s.ID == r.FormValue("subscriptionID") {
@@ -442,6 +467,42 @@ func consoleBillingCancelHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO disable all integrations at sub.PeriodEnd #7
 
 	user.Logger.Infof("cancelled stripe subscription subscriptionID %q", r.Form.Get("subscriptionID"))
+
+	http.Redirect(w, r, "/console/billing", http.StatusFound)
+}
+
+// consoleBillingCouponHandler adds coupons to an account.
+func consoleBillingCouponHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	var (
+		couponID = r.Form.Get("couponID")
+		user     = r.Context().Value(userCtxKey{}).(*users.User)
+	)
+
+	customer, err := user.StripeCustomer()
+	switch {
+	case err != nil:
+		user.Logger.WithError(err).Error("could not get stripe customer")
+		errorHandler(w, r, http.StatusInternalServerError, "")
+		return
+	case customer == nil:
+		errorHandler(w, r, http.StatusBadRequest, "Not a stripe customer")
+		return
+	}
+
+	if user.StripeDiscount(customer) != nil {
+		errorHandler(w, r, http.StatusBadRequest, "Existing discount already exists")
+		return
+	}
+
+	err = user.ProcessStripeCoupon(couponID)
+	if err != nil {
+		user.Logger.WithError(err).Error("could not process/apply stripe coupon")
+		errorHandler(w, r, http.StatusBadRequest, "Cannot apply coupon")
+		return
+	}
+
+	user.Logger.Infof("processed stripe coupon %v", couponID)
 
 	http.Redirect(w, r, "/console/billing", http.StatusFound)
 }

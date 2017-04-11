@@ -4,6 +4,8 @@
     background: #3069b3;
 }
 
+form { margin-bottom: 1em; }
+
 .nav-item { color: white; }
 a.nav-item { color: white; }
 a.nav-item:hover { color: white; text-decoration: underline; }

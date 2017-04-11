@@ -16,7 +16,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	stripe "github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go/coupon"
 	"github.com/stripe/stripe-go/customer"
+	"github.com/stripe/stripe-go/invoice"
 	"github.com/stripe/stripe-go/sub"
 )
 
@@ -150,6 +152,56 @@ func (u *User) ProcessStripePayment(token, plan string) error {
 	return nil
 }
 
+// StripeCustomer gets the stripe customer, returns nil if there's no stripe
+// customer ID or an error if an error occurs.
+func (u *User) StripeCustomer() (*stripe.Customer, error) {
+	if u.StripeCustomerID == "" {
+		return nil, nil
+	}
+	customer, err := customer.Get(u.StripeCustomerID, nil)
+	return customer, errors.Wrapf(err, "could not get stripe customer id %q", u.StripeCustomerID)
+}
+
+// ProcessStripeCoupon adds a couponID to a stripe customer.
+func (u *User) ProcessStripeCoupon(couponID string) error {
+	coupon, err := coupon.Get(couponID, nil)
+	if err != nil {
+		return err
+	}
+	if !coupon.Valid {
+		return errors.New("coupon does not exist")
+	}
+
+	customerParams := &stripe.CustomerParams{
+		Coupon: couponID,
+	}
+	_, err = customer.Update(u.StripeCustomerID, customerParams)
+	return err
+}
+
+// Invoice represents an upcoming or previous invoice.
+type Invoice struct {
+	AmountDisplay string
+	DueDate       time.Time
+}
+
+// StripeUpcomingInvoice returns the upcoming invoice for a user, nil if
+// there are no upcoming invoices for this user, or an error.
+func (u *User) StripeUpcomingInvoice() (*Invoice, error) {
+	if u.StripeCustomerID == "" {
+		return nil, nil
+	}
+	invoice, err := invoice.GetNext(&stripe.InvoiceParams{Customer: u.StripeCustomerID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Invoice{
+		AmountDisplay: amountString(invoice.Currency, invoice.Amount),
+		DueDate:       time.Unix(invoice.Date, 0),
+	}, nil
+}
+
 // Subscription represents a payment subscription.
 type Subscription struct {
 	ID            string
@@ -168,22 +220,59 @@ type Subscription struct {
 	Ended bool
 }
 
-// StripeSubscriptions retuns a slice of subscriptions for the current user,
+// Discount represents a discount to be applied.
+type Discount struct {
+	CouponID    string
+	StartedAt   time.Time
+	EndedAt     time.Time
+	Description string
+}
+
+// StripeDiscount returns the discount for the current user. If the user does
+// not have an active discount, nil is returned.
+func (u *User) StripeDiscount(customer *stripe.Customer) *Discount {
+	if customer.Discount == nil {
+		return nil
+	}
+
+	discount := Discount{
+		CouponID:  customer.Discount.Coupon.ID,
+		StartedAt: time.Unix(customer.Discount.Start, 0),
+		EndedAt:   time.Unix(customer.Discount.End, 0),
+	}
+
+	if customer.Discount.Deleted || time.Now().After(discount.EndedAt) {
+		return nil
+	}
+
+	switch {
+	case customer.Discount.Coupon.Percent > 0:
+		discount.Description = fmt.Sprintf("%d%% off", customer.Discount.Coupon.Percent)
+	case customer.Discount.Coupon.Amount > 0:
+		discount.Description = fmt.Sprintf("%d%% off", customer.Discount.Coupon.Percent)
+	}
+
+	switch customer.Discount.Coupon.Duration {
+	case coupon.Forever:
+		discount.Description += " forever"
+	case coupon.Once:
+		discount.Description += " the next invoice"
+	case coupon.Repeating:
+		discount.Description += fmt.Sprintf(" for %d months", customer.Discount.Coupon.DurationPeriod)
+	}
+
+	return &discount
+}
+
+// StripeSubscriptions returns a slice of subscriptions for the current user,
 // both current and previous subscriptions are returned.
-func (u *User) StripeSubscriptions() ([]Subscription, error) {
-	if u.StripeCustomerID == "" {
-		return nil, nil
-	}
-	customer, err := customer.Get(u.StripeCustomerID, nil)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not get stripe customer id %q", u.StripeCustomerID)
-	}
+func (u *User) StripeSubscriptions(customer *stripe.Customer) []Subscription {
 	var subs []Subscription
 	for _, sub := range customer.Subs.Values {
 		s := Subscription{
 			ID:            sub.ID,
 			Name:          sub.Plan.Name,
-			AmountDisplay: fmt.Sprintf("$%s %.2f", strings.ToUpper(string(sub.Plan.Currency)), float64(sub.Plan.Amount)/100),
+			AmountDisplay: amountString(sub.Plan.Currency, int64(sub.Plan.Amount)),
 			AmountCents:   uint(sub.Plan.Amount),
 			Interval:      string(sub.Plan.Interval),
 			Ended:         sub.EndCancel,
@@ -202,7 +291,11 @@ func (u *User) StripeSubscriptions() ([]Subscription, error) {
 		}
 		subs = append(subs, s)
 	}
-	return subs, nil
+	return subs
+}
+
+func amountString(currency stripe.Currency, amount int64) string {
+	return fmt.Sprintf("$%s %.2f", strings.ToUpper(string(currency)), float64(amount)/100)
 }
 
 // CancelStripeSubscription cancels a stripe subscription at the end of the
