@@ -7,7 +7,7 @@
 {{ if not .Subscriptions }}
     <p class="notification">Choose a plan to view current and previous subscriptions.</p>
 {{ else }}
-    <table class="table">
+    <table class="table subscriptions">
         <thead>
             <tr>
                 <th>Name</th>
@@ -18,19 +18,19 @@
         </thead>
         <tbody>
         {{ range .Subscriptions }}
-            <tr>
-                <td>{{ .Name }}</td>
-                <td>{{ .AmountDisplay }} per {{ .Interval }}</td>
-                <td>{{ .StartedAt }}</td>
-                <td>
-                    {{ if .Ended }}
-                        {{ .CancelledAt }}
-                    {{ else }}
+            <tr class="{{ if .Ended }}cancelled{{ end }}">
+                <td class="name">{{ .Name }}</td>
+                <td class="amount">{{ .AmountDisplay }} per {{ .Interval }}</td>
+                <td class="started">{{ .StartedAt }}</td>
+                <td class="cancelled">
+                    {{ if .Ended -}}
+                        Cancelled at {{ .CancelledAt }}
+                    {{- else -}}
                         <form method="POST" action="/console/billing/cancel">
                             <input type="hidden" name="subscriptionID" value="{{ .ID }}">
                             <button class="button is-danger" type="submit">Cancel</button>
                         </form>
-                    {{ end }}
+                    {{- end }}
                 </td>
             </tr>
         {{ end }}

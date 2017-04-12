@@ -33,3 +33,6 @@ a:hover { text-decoration: underline; }
 .menu-list a:hover { color: #3069b3; }
 .menu-list a { font-size: 16px; }
 .menu-label { font-size: 20px; padding-left: 10px; }
+
+.subscriptions .cancelled .amount { text-decoration: line-through; }
+.subscriptions .cancelled td { color: grey; }
