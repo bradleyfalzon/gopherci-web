@@ -61,16 +61,18 @@
             </tbody>
         </table>
     {{ else  }}
-        <form method="POST" action="/console/billing/coupon">
-			<div class="field has-addons">
-				<p class="control">
-					<input class="input" type="text" name="couponID" placeholder="Coupon Code">
-				</p>
-				<p class="control">
-					<button class="button is-info" type="submit">Add</button>
-				</p>
-			</div>
-        </form>
+        <div class="coupon-form">
+            <form method="POST" action="/console/billing/coupon">
+                <div class="field has-addons">
+                    <p class="control">
+                        <input class="input" type="text" name="couponID" placeholder="Coupon Code">
+                    </p>
+                    <p class="control">
+                        <button class="button is-info" type="submit">Add</button>
+                    </p>
+                </div>
+            </form>
+        </div>
     {{ end  }}
 {{ end }}
 

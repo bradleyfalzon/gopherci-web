@@ -15,6 +15,7 @@
 <table class="table">
     <thead>
         <tr>
+            <th>Installation ID</th>
             <th>Type</th>
             <th>Name</th>
             <th>Options</th>
@@ -23,6 +24,16 @@
     <tbody>
         {{ range .Installs }}
         <tr>
+            <td>
+                {{ if .InstallationID }}
+                        <span class="icon">
+                                  <i class="fa fa-github"></i>
+                                      </span>
+                <a href="https://github.com/settings/installations/{{ .InstallationID }}">{{ .InstallationID }}</a>
+                {{ else }}
+                    <i>Not installed</i>
+                {{ end }}
+            </td>
             <td>{{ .Type }}</td>
             <td>{{ .Name }}</td>
             <td>
@@ -30,11 +41,11 @@
                     <input type="hidden" name="installationID" value="{{ .InstallationID }}">
                 {{ if eq .State "Disabled" }}
                     <input type="hidden" name="state" value="enable">
-                    <button type="submit" value="enable">Enable</button>
+                    <button type="submit" value="enable" class="button is-success">Enable</button>
                 {{ else if eq .State "Enabled" }}
                     {{ if .CanDisable }}
                         <input type="hidden" name="state" value="disable">
-                        <button type="submit" value="disable">Disable</button>
+                        <button type="submit" value="disable" class="button is-danger">Disable</button>
                     {{ else }}
                         <span title="Only the person who enable this can disable">Enabled</span>
                     {{ end }}

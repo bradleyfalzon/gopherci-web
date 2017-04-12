@@ -92,6 +92,8 @@ h4.panel-header {
   position: relative;
 }
 
+.example-analysis { box-shadow: 0 0 12px 2px #ccc; }
+
 .pad-15-vh {
   padding-top: 15vh;
   padding-bottom: 15vh;

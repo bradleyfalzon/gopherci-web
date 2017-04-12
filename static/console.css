@@ -2,9 +2,11 @@
 
 .nav {
     background: #3069b3;
+    padding: 0 1em;
 }
 
-form { margin-bottom: 1em; }
+html { background: #f5f5f5; }
+.coupon-form { margin-bottom: 1.5rem; }
 
 .nav-item { color: white; }
 a.nav-item { color: white; }
