@@ -403,7 +403,7 @@ func consoleBillingProcessHandler(w http.ResponseWriter, r *http.Request) {
 		user.Logger.WithError(err).Error("could not get stripe customer")
 		errorHandler(w, r, http.StatusInternalServerError, "")
 		return
-	case customer == nil:
+	case customer != nil:
 		// Ensure customer does not have any current subscriptions until we have the
 		// ability to prorata subscriptions.
 		subs := user.StripeSubscriptions(customer)

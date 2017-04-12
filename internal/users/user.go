@@ -268,6 +268,9 @@ func (u *User) StripeDiscount(customer *stripe.Customer) *Discount {
 // both current and previous subscriptions are returned.
 func (u *User) StripeSubscriptions(customer *stripe.Customer) []Subscription {
 	var subs []Subscription
+	if customer.Subs == nil {
+		return nil
+	}
 	for _, sub := range customer.Subs.Values {
 		s := Subscription{
 			ID:            sub.ID,
