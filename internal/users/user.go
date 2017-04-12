@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -193,9 +194,11 @@ func (u *User) StripeUpcomingInvoice() (*Invoice, error) {
 	}
 	invoice, err := invoice.GetNext(&stripe.InvoiceParams{Customer: u.StripeCustomerID})
 	if err != nil {
+		if serr, ok := err.(*stripe.Error); ok && serr.HTTPStatusCode == http.StatusNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
-
 	return &Invoice{
 		AmountDisplay: amountString(invoice.Currency, invoice.Amount),
 		DueDate:       time.Unix(invoice.Date, 0),
