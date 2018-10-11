@@ -1,37 +1,41 @@
 body, html {
-  font-family: Roboto,"Helvetica Neue",Helvetica,Arial,sans-serif;
-  height: 100%;
-  font-size: 16px;
-  line-height: 1.6em;
+    font-family: Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    height: 100%;
+    font-size: 16px;
+    line-height: 1.6em;
 }
 
-p { margin-bottom: 10px; }
+p {
+    margin-bottom: 10px;
+}
 
 .early-access {
-  color: white;
-  padding: 0 5px;
-  border-radius: 5px;
-  font-size: 0.8em;
+    color: white;
+    padding: 0 5px;
+    border-radius: 5px;
+    font-size: 0.8em;
 }
+
 .button.is-danger {
-  background-color: #B33930;
+    background-color: #B33930;
 }
+
 .button.is-danger:hover {
-  color: #B33930;
-  background-color: white;
-  border: 1px solid #B33930;
+    color: #B33930;
+    background-color: white;
+    border: 1px solid #B33930;
 
 }
 
 .header-image {
-  background-size: cover;
-  background-position-y: 50%;
-  background-blend-mode: exclusion;
+    background-size: cover;
+    background-position-y: 50%;
+    background-blend-mode: exclusion;
 }
 
 .hero.is-primary {
-  background-color: #3069b3;
-  height: 85vh;
+    background-color: #3069b3;
+    height: 85vh;
 }
 
 @media screen and (max-height: 800px) {
@@ -43,106 +47,115 @@ p { margin-bottom: 10px; }
 }
 
 .title.is-2 {
-  font-size: 60px;
+    font-size: 60px;
 }
 
 .hero-cta {
-  padding: 30px 0;
+    padding: 30px 0;
 }
 
 /* Make panels height even when in a row */
-.about .panel, .about .panel-block { height: 100%; }
+.about .panel, .about .panel-block {
+    height: 100%;
+}
 
 .panel-block.section p {
-  line-height: 1.4;
-  color: #95A5A6;
-  font-weight: 300;
+    line-height: 1.4;
+    color: #95A5A6;
+    font-weight: 300;
 }
 
 .section.main {
-  background-color: #F0F0F0;
+    background-color: #F0F0F0;
 }
 
 .icon-block {
-  font-size: 5em;
+    font-size: 5em;
 }
 
 h4.panel-header {
-  font-weight: 700;
-  color: #4a4a4a;
-  font-size: 1.5em;
-  line-height: 1.3em;
-  padding-bottom: 35px;
+    font-weight: 700;
+    color: #4a4a4a;
+    font-size: 1.5em;
+    line-height: 1.3em;
+    padding-bottom: 35px;
 }
 
 .about .panel-block {
-  min-height: 350px;
+    min-height: 350px;
 }
 
-.features-list ul { padding-left: 30px; margin-bottom: 30px; }
+.features-list ul {
+    padding-left: 30px;
+    margin-bottom: 30px;
+}
+
 .features-list li {
     list-style-type: disc;
     margin-bottom: 5px;
     line-height: 1.6em;
 }
 
-
 .features .panel-block {
-  min-height: 350px;
-  position: relative;
+    min-height: 350px;
+    position: relative;
 }
 
-.example-analysis { box-shadow: 0 0 12px 2px #ccc; }
+.example-analysis {
+    box-shadow: 0 0 12px 2px #ccc;
+}
 
 .pad-15-vh {
-  padding-top: 15vh;
-  padding-bottom: 15vh;
+    padding-top: 15vh;
+    padding-bottom: 15vh;
 }
 
 .section-alt {
-  background-color: #ffffff;
-  border-top: 1px solid #e6e6e6;
-  border-bottom: 1px solid #e6e6e6;
+    background-color: #ffffff;
+    border-top: 1px solid #e6e6e6;
+    border-bottom: 1px solid #e6e6e6;
 }
 
 .open-source h2.is-header {
-  font-size: 2em;
-  font-weight: 300;
-  color: rgba(0, 0, 0, 0.75);
-  padding-bottom: 25px;
+    font-size: 2em;
+    font-weight: 300;
+    color: rgba(0, 0, 0, 0.75);
+    padding-bottom: 25px;
 }
 
 .faq h2.is-header, .features h2.is-header {
-  font-size: 2.5em;
-  font-weight: 300;
-  color: rgba(0, 0, 0, 0.75);
-  padding-bottom: 35px;
+    font-size: 2.5em;
+    font-weight: 300;
+    color: rgba(0, 0, 0, 0.75);
+    padding-bottom: 35px;
 }
 
-.pricing { background: #3069b3; }
+.pricing {
+    background: #3069b3;
+}
 
 .pricing h2.is-header {
-  font-size: 2.5em;
-  font-weight: 300;
-  color: rgba(255, 255, 255, 0.9);
-  padding-bottom: 25px;
+    font-size: 2.5em;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.9);
+    padding-bottom: 25px;
 }
 
 .pricing .panel {
-  box-shadow: none;
-  border: 1px solid;
-  border-color: #e5e6e9 #dfe0e4 #d0d1d5;
-  padding: 30px 20px 10px 20px;
-  margin: 15px 0;
-  border-radius: 0px;
-  background: #3069b3;
+    box-shadow: none;
+    border: 1px solid;
+    border-color: #e5e6e9 #dfe0e4 #d0d1d5;
+    padding: 30px 20px 10px 20px;
+    margin: 15px 0;
+    border-radius: 0;
+    background: #3069b3;
 }
 
 .panel-heading.plan-price {
-  background-color: transparent;
-  border: none;
-  font-size: 3em;
-  padding-bottom: 0;
+    background-color: transparent;
+    border: none;
+    font-size: 3em;
+    padding-bottom: 0;
 }
 
 .pricing .plan-usd {
@@ -152,64 +165,71 @@ h4.panel-header {
 }
 
 .panel-heading.plan-price small {
-  font-size: .4em;
+    font-size: .4em;
 }
 
 .panel-block.plan-name {
-  font-weight: bold;
-  color: #646464;
-  font-size: 1.2em;
+    font-weight: bold;
+    color: #646464;
+    font-size: 1.2em;
 }
 
 .pricing .plan-details {
-  padding-top: 50px;
+    padding-top: 50px;
 }
 
 .pricing .panel-block {
-  margin-top: 8px;
-  margin-bottom: 8px;
+    margin-top: 8px;
+    margin-bottom: 8px;
 }
 
 .pricing .button.is-primary {
-  margin-top: 30px;
-  margin-bottom: 30px;
+    margin-top: 30px;
+    margin-bottom: 30px;
 }
 
-.pricing .no-free {color: white; text-align: center;}
-.pricing .no-free a {color: white; text-decoration: underline; }
+.pricing .no-free {
+    color: white;
+    text-align: center;
+}
+
+.pricing .no-free a {
+    color: white;
+    text-decoration: underline;
+}
 
 footer.panel-footer {
-  display: block;
-  position: absolute;
-  bottom: 25px;
-  left: 0;
-  right: 0;
+    display: block;
+    position: absolute;
+    bottom: 25px;
+    left: 0;
+    right: 0;
 }
 
 .nav {
-  background-color: #3069b3;
-  color: white;
-  border-bottom: 1px solid white;
+    background-color: #3069b3;
+    color: white;
+    border-bottom: 1px solid white;
 }
 
 .panel-block.section p {
-  color: #4a4a4a;
+    color: #4a4a4a;
 }
 
 .pricing .panel {
-  background: white;
+    background: white;
 }
 
 .button.is-primary {
-  background: white;
-  color: #3069b3;
-  border: 1px solid #3069b3;
+    background: white;
+    color: #3069b3;
+    border: 1px solid #3069b3;
 }
 
 .button.is-primary.is-outlined {
-  background-color: white;
-  color: #3069b3;
-  border: 1px solid #3069b3;
+    background-color: white;
+    color: #3069b3;
+    border: 1px solid #3069b3;
 }
 
 .button.is-info.is-outlined:focus, .button.is-info.is-outlined:hover {
@@ -219,71 +239,73 @@ footer.panel-footer {
 }
 
 .button.is-primary.is-active, .button.is-primary:focus, .button.is-primary:hover {
-  background-color: #3069b3;
-  border-color: transparent;
-  color: #fff;
+    background-color: #3069b3;
+    border-color: transparent;
+    color: #fff;
 }
 
 .hero-cta {
-  background-color: white;
+    background-color: white;
 }
 
 .nav-item a, a.nav-item {
-  color: rgba(255, 255, 255, 0.85);
+    color: rgba(255, 255, 255, 0.85);
 }
 
 .nav-item a, a.nav-item:hover {
-  color: white;
+    color: white;
 }
 
 .hero .img {
-  display: flex;
-  align-items: center;
-  height: 100%;
-  padding: 20px;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 20px;
 }
 
 .hero .hero-body {
-  font-size: 1.4em;
-  line-height: 1.6em;
-  display: flex;
-  align-items: center;
-  height: 100%;
-  padding: 20px;
+    font-size: 1.4em;
+    line-height: 1.6em;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 20px;
 }
 
 .is-logo {
-  font-size: 26px;
-  font-weight: 400;
+    font-size: 26px;
+    font-weight: 400;
 }
 
 .is-bold {
-  font-weight: bold;
+    font-weight: bold;
 }
 
 .button.is-primary.is-outlined:focus, .button.is-primary.is-outlined:hover {
-  border: 1px solid white;
-  background: #3069b3;
+    border: 1px solid white;
+    background: #3069b3;
 }
 
 a {
-  color: #3069b3;
+    color: #3069b3;
 }
 
 .content a:not(.button):visited {
-  color: #3069b3;
+    color: #3069b3;
 }
 
 .footer {
-  padding: 40px 20px 40px;
+    padding: 40px 20px 40px;
 }
 
 .footer a:not(.icon):hover, .footer a:visited:not(.icon):hover {
-  border-bottom-color: #3069b3;
+    border-bottom-color: #3069b3;
 }
 
-.hero .columns { height: 100%; }
+.hero .columns {
+    height: 100%;
+}
 
 .panel {
-  border-radius: 0px;
+    border-radius: 0;
 }

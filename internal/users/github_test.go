@@ -13,11 +13,11 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"github.com/Sirupsen/logrus"
-	sqlmock "github.com/bradleyfalzon/go-sqlmock"
+	"github.com/bradleyfalzon/go-sqlmock"
 	"github.com/bradleyfalzon/gopherci-web/internal/session"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/sirupsen/logrus"
 )
 
 var logger = logrus.New().WithField("pkg", "session_test")
@@ -119,7 +119,7 @@ func TestGitHubLogin_new(t *testing.T) {
 
 	var (
 		wantUserID = 1
-		githubID   = 2
+		githubID   = int64(2)
 		token      = &oauth2.Token{AccessToken: "tkn"}
 		email      = "user@example.com"
 	)
@@ -159,7 +159,7 @@ func TestGitHubLogin_update(t *testing.T) {
 
 	var (
 		wantUserID = 1
-		githubID   = 2
+		githubID   = int64(2)
 		token      = &oauth2.Token{AccessToken: "a"}
 		email      = "user@example.com"
 	)

@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	sqlmock "github.com/bradleyfalzon/go-sqlmock"
+	"github.com/bradleyfalzon/go-sqlmock"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -28,7 +28,7 @@ func TestListInstallations_errors(t *testing.T) {
 		}
 		defer db.Close()
 
-		accountIDs := []int{1, 2}
+		accountIDs := []int64{1, 2}
 
 		mock.ExpectQuery(`SELECT.*FROM gh_installations WHERE account_id IN \(\?, \?\)`).
 			WithArgs(accountIDs[0], accountIDs[1]).
@@ -52,7 +52,7 @@ func TestListInstallations(t *testing.T) {
 	}
 	defer db.Close()
 
-	accountIDs := []int{1, 2}
+	accountIDs := []int64{1, 2}
 
 	rows := sqlmock.NewRows([]string{"installation_id", "account_id"}).AddRow(1, 1).AddRow(2, 2)
 

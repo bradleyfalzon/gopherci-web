@@ -22,31 +22,31 @@ var githubBaseURL = "https://api.github.com/"
 // OAuthLoginHandler starts the initial oauth login flow by redirecting the
 // user to GitHub for authentication and authorisation our app.
 func (um *UserManager) OAuthLoginHandler(w http.ResponseWriter, r *http.Request) {
-	session := session.FromContext(r.Context())
-	session.GitHubOAuthState = uuid.New()
+	sess := session.FromContext(r.Context())
+	sess.GitHubOAuthState = uuid.New()
 
-	url := um.oauthConf.AuthCodeURL(session.GitHubOAuthState.String(), oauth2.AccessTypeOnline)
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	uri := um.oauthConf.AuthCodeURL(sess.GitHubOAuthState.String(), oauth2.AccessTypeOnline)
+	http.Redirect(w, r, uri, http.StatusTemporaryRedirect)
 }
 
 // OAuthCallbackHandler handles the callback after GitHub authentication and
 // persists the credentials to storage for use later.
 func (um *UserManager) OAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	session := session.FromContext(r.Context())
+	sess := session.FromContext(r.Context())
 
-	if session.GitHubOAuthState == uuid.Nil {
-		um.logger.Error("github: invalid oauth state from session, it is nil")
+	if sess.GitHubOAuthState == uuid.Nil {
+		um.logger.Error("github: invalid oauth state from sess, it is nil")
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
 	state := r.FormValue("state")
-	if state != session.GitHubOAuthState.String() {
-		um.logger.Errorf("github: invalid oauth state from session, have %q, want %q", state, session.GitHubOAuthState.String())
+	if state != sess.GitHubOAuthState.String() {
+		um.logger.Errorf("github: invalid oauth state from sess, have %q, want %q", state, sess.GitHubOAuthState.String())
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	session.GitHubOAuthState = uuid.Nil
+	sess.GitHubOAuthState = uuid.Nil
 
 	code := r.FormValue("code")
 	token, err := um.oauthConf.Exchange(oauth2.NoContext, code)
@@ -64,14 +64,14 @@ func (um *UserManager) OAuthCallbackHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Set session to this user
-	session.UserID, err = um.GitHubLogin(r.Context(), *ghUser.ID, token)
+	// Set sess to this user
+	sess.UserID, err = um.GitHubLogin(r.Context(), *ghUser.ID, token)
 	if err != nil {
 		um.logger.WithError(err).Error("github: could not set github user in db")
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	um.logger.WithField("userID", session.UserID).Printf("github: logged in as GitHub user: %s", *ghUser.Login)
+	um.logger.WithField("userID", sess.UserID).Printf("github: logged in as GitHub user: %s", *ghUser.Login)
 
 	http.Redirect(w, r, "/console", http.StatusTemporaryRedirect)
 }
@@ -90,7 +90,7 @@ func NewClient(oauthConf *oauth2.Config, token *oauth2.Token) *github.Client {
 // GitHubLogin assigns the token to an existing user with the given githubID,
 // if the user does not exist, the user is created. If an error occurs err is
 // non-nil, else the userID of the user is returned.
-func (um *UserManager) GitHubLogin(ctx context.Context, githubID int, token *oauth2.Token) (userID int, err error) {
+func (um *UserManager) GitHubLogin(ctx context.Context, githubID int64, token *oauth2.Token) (userID int, err error) {
 	jsonToken, err := json.Marshal(token)
 	if err != nil {
 		return 0, errors.Wrap(err, "could not marshal oauth2.token")

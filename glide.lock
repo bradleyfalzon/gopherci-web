@@ -1,0 +1,85 @@
+hash: 142d5ce974d7320f94c94522cdc7342bd9f083b9e2afc2687ccee211891f19d5
+updated: 2018-10-11T13:30:42.731452+11:00
+imports:
+- name: github.com/go-chi/chi
+  version: b5294d10673813fac8558e7f47242bc9e61b4c25
+- name: github.com/go-sql-driver/mysql
+  version: d523deb1b23d913de5bdada721a6071e71283618
+- name: github.com/golang/protobuf
+  version: ddf22928ea3c56eb4292a0adbbf5001b1e8e7d0d
+  subpackages:
+  - proto
+- name: github.com/google/go-github
+  version: f55b50f38167644bb7e4be03d9a2bde71d435239
+  subpackages:
+  - github
+- name: github.com/google/go-querystring
+  version: 44c6ddd0a2342c386950e880b658017258da92fc
+  subpackages:
+  - query
+- name: github.com/google/uuid
+  version: d460ce9f8df2e77fb1ba55ca87fafed96c607494
+- name: github.com/jmoiron/sqlx
+  version: 0dae4fefe7c0e190f7b5a78dac28a1c82cc8d849
+  subpackages:
+  - reflectx
+- name: github.com/joho/godotenv
+  version: 23d116af351c84513e1946b527c88823e476be13
+- name: github.com/konsorten/go-windows-terminal-sequences
+  version: 5c8c8bd35d3832f5d134ae1e1e375b69a4d25242
+- name: github.com/pkg/errors
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
+- name: github.com/pressly/chi
+  version: b5294d10673813fac8558e7f47242bc9e61b4c25
+  subpackages:
+  - middleware
+- name: github.com/rubenv/sql-migrate
+  version: 3f452fc0ebebbb784fdab91f7bc79a31dcacab5c
+  subpackages:
+  - sqlparse
+- name: github.com/sirupsen/logrus
+  version: ad15b42461921f1fb3529b058c6786c6a45d5162
+- name: github.com/stripe/stripe-go
+  version: 5d00b1a66777515527a2a5eb7828ede4cf7d4ed2
+  subpackages:
+  - coupon
+  - customer
+  - event
+  - form
+  - invoice
+  - sub
+- name: golang.org/x/crypto
+  version: 7c1a557ab941a71c619514f229f0b27ccb0c27cf
+  subpackages:
+  - ssh/terminal
+- name: golang.org/x/net
+  version: 146acd28ed5894421fb5aac80ca93bc1b1f46f87
+  subpackages:
+  - context
+  - context/ctxhttp
+- name: golang.org/x/oauth2
+  version: c57b0facaced709681d9f90397429b9430a74754
+  subpackages:
+  - github
+  - internal
+- name: golang.org/x/sys
+  version: 4497e2df6f9e69048a54498c7affbbec3294ad47
+  subpackages:
+  - unix
+  - windows
+- name: google.golang.org/appengine
+  version: ae0ab99deb4dc413a2b4bd6c8bdd0eb67f1e4d06
+  subpackages:
+  - cloudsql
+  - internal
+  - internal/base
+  - internal/datastore
+  - internal/log
+  - internal/remote_api
+  - internal/urlfetch
+  - urlfetch
+- name: gopkg.in/gorp.v1
+  version: c87af80f3cc5036b55b83d77171e156791085e2e
+testImports:
+- name: github.com/bradleyfalzon/go-sqlmock
+  version: d4cd2ca2ad1cc2130bba385aab072218f131f636

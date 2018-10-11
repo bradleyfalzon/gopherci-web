@@ -9,12 +9,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/bradleyfalzon/gopherci-web/internal/session"
 	"github.com/bradleyfalzon/gopherci-web/internal/users"
 	"github.com/google/go-github/github"
 	"github.com/pressly/chi"
-	stripe "github.com/stripe/stripe-go"
+	"github.com/sirupsen/logrus"
+	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/event"
 )
 
@@ -39,12 +39,12 @@ type userCtxKey struct{}
 
 func MustBeUserMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session := session.FromContext(r.Context())
-		if !session.LoggedIn() {
+		sess := session.FromContext(r.Context())
+		if !sess.LoggedIn() {
 			http.Redirect(w, r, "/gh/login", http.StatusFound)
 			return
 		}
-		user, err := um.GetUser(session.UserID)
+		user, err := um.GetUser(sess.UserID)
 		if err != nil {
 			logger.WithError(err).Error("could not get user")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -60,7 +60,7 @@ func MustBeUserMiddleware(next http.Handler) http.Handler {
 }
 
 // homeHandler displays the home page
-func homeHandler(w http.ResponseWriter, r *http.Request) {
+func homeHandler(w http.ResponseWriter, _ *http.Request) {
 	page := struct {
 		Title string
 	}{"GopherCI"}
@@ -76,7 +76,7 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // errorHandler handles an error message, with an optional description
-func errorHandler(w http.ResponseWriter, r *http.Request, code int, desc string) {
+func errorHandler(w http.ResponseWriter, _ *http.Request, code int, desc string) {
 	page := struct {
 		Title  string
 		Code   string // eg 400
@@ -128,31 +128,31 @@ func stripeEventHandler(w http.ResponseWriter, r *http.Request) {
 	log := logger.WithFields(logrus.Fields{
 		"StripeEventType":   checkedEvent.Type,
 		"StripeEventID":     checkedEvent.ID,
-		"StripeEventLive":   checkedEvent.Live,
-		"StripeEventReq":    checkedEvent.Req,
+		"StripeEventLive":   checkedEvent.Livemode,
+		"StripeEventReq":    checkedEvent.Request,
 		"StripeEventUserID": checkedEvent.UserID,
 	})
 
 	switch checkedEvent.Type {
 	case "customer.subscription.deleted":
-		var sub stripe.Sub
+		var sub stripe.Subscription
 		err := json.Unmarshal(checkedEvent.Data.Raw, &sub)
 		if err != nil {
 			errorHandler(w, r, http.StatusBadRequest, "could not unmarshal subscription event")
 			return
 		}
-		log.WithField("StripeSubID", sub.ID).WithField("StripeCustomerID", sub.Customer.ID).Infof("subscription cancelled at %v", time.Unix(sub.PeriodEnd, 0))
+		log.WithField("StripeSubID", sub.ID).WithField("StripeCustomerID", sub.Customer.ID).Infof("subscription cancelled at %v", time.Unix(sub.CurrentPeriodEnd, 0))
 	default:
-		log.Info(checkedEvent.Data.Obj)
+		log.Info(checkedEvent.Data.Object)
 	}
 }
 
 // logoutHandler logs a user out, if logged in, and redirects to the home page.
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	session := session.FromContext(r.Context())
-	if session.LoggedIn() {
-		if err := session.Delete(w); err != nil {
-			logger.WithError(err).Error("could not delete session")
+	sess := session.FromContext(r.Context())
+	if sess.LoggedIn() {
+		if err := sess.Delete(w); err != nil {
+			logger.WithError(err).Error("could not delete sess")
 		}
 	}
 	http.Redirect(w, r, "/", http.StatusFound)
@@ -161,7 +161,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 // consoleIndexHandler displays the console's index page.
 func consoleIndexHandler(w http.ResponseWriter, r *http.Request) {
 	type install struct {
-		AccountID      int // github accountID, may not be set on orphaned installations
+		AccountID      int64 // github accountID, may not be set on orphaned installations
 		InstallationID int
 		Type           string
 		Name           string
@@ -178,8 +178,8 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check if logged in
 	// TODO this should be a part of middleware
-	session := session.FromContext(r.Context())
-	if !session.LoggedIn() {
+	sess := session.FromContext(r.Context())
+	if !sess.LoggedIn() {
 		http.Redirect(w, r, "/gh/login", http.StatusFound)
 		return
 	}
@@ -220,7 +220,7 @@ func consoleIndexHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Refactor the following into gciweb package? Yes
 
-	accountIDs := []int{*ghUser.ID}
+	accountIDs := []int64{*ghUser.ID}
 	page.Installs = append(page.Installs, install{
 		AccountID:  *ghUser.ID,
 		Type:       "Personal",

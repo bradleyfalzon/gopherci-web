@@ -21,13 +21,13 @@ func New(db *sqlx.DB) *Client {
 
 // Installation represents a row from the gh_installations table.
 type Installation struct {
-	InstallationID int `db:"installation_id"`
-	AccountID      int `db:"account_id"`
+	InstallationID int   `db:"installation_id"`
+	AccountID      int64 `db:"account_id"`
 }
 
 // ListInstallations returns a slice of installations matching accountIDs, if
 // no rows matched, installations is nil.
-func (c *Client) ListInstallations(accountIDs ...int) ([]Installation, error) {
+func (c *Client) ListInstallations(accountIDs ...int64) ([]Installation, error) {
 	query, args, err := sqlx.In("SELECT installation_id, account_id FROM gh_installations WHERE account_id IN (?)", accountIDs)
 	if err != nil {
 		return nil, err

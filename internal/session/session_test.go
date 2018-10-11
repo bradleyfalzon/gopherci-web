@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	sqlmock "github.com/bradleyfalzon/go-sqlmock"
+	"github.com/bradleyfalzon/go-sqlmock"
 	"github.com/google/uuid"
 )
 

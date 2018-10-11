@@ -12,11 +12,11 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/google/go-github/github"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	stripe "github.com/stripe/stripe-go"
+	"github.com/sirupsen/logrus"
+	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/coupon"
 	"github.com/stripe/stripe-go/customer"
 	"github.com/stripe/stripe-go/invoice"
@@ -118,37 +118,37 @@ func (u *User) EnabledInstallations() ([]int, error) {
 
 func (u *User) ProcessStripePayment(token, plan string) error {
 	// 2017-01-22, we've switched from AUD to USD currency in stripe, so existing
-	// customers need a new stripe customer ID as stripe won't accept a single
-	// customer with multiple currencies. So create a new stripe customer for
+	// customers need a new stripe thisCustomer ID as stripe won't accept a single
+	// thisCustomer with multiple currencies. So create a new stripe thisCustomer for
 	// these users. We can remove the "u.UserID > 17"  condition once everyone is
 	// off of the PersonalMonthly plan. See commit message for more information.
 	if u.StripeCustomerID != "" && u.UserID > 17 {
 		// TODO this should upgrade the existing plan (prorata) #8
-		_, err := sub.New(&stripe.SubParams{
-			Customer: u.StripeCustomerID,
-			Plan:     plan,
+		_, err := sub.New(&stripe.SubscriptionParams{
+			Customer: &u.StripeCustomerID,
+			Plan:     &plan,
 		})
 		if err != nil {
-			return errors.Wrapf(err, "could not subscribe userID %v stripe customer %v to %q", u.UserID, u.StripeCustomerID, plan)
+			return errors.Wrapf(err, "could not subscribe userID %v stripe thisCustomer %v to %q", u.UserID, u.StripeCustomerID, plan)
 		}
 		return nil
 	}
 
 	customerParams := &stripe.CustomerParams{
-		Plan: plan,
+		Plan: &plan,
 		Params: stripe.Params{
-			Meta: map[string]string{"userID": strconv.FormatInt(int64(u.UserID), 10)},
+			Metadata: map[string]string{"userID": strconv.FormatInt(int64(u.UserID), 10)},
 		},
 	}
 	_ = customerParams.SetSource(token)
-	customer, err := customer.New(customerParams)
+	thisCustomer, err := customer.New(customerParams)
 	if err != nil {
-		return errors.Wrap(err, "could not create stripe customer")
+		return errors.Wrap(err, "could not create stripe thisCustomer")
 	}
 
-	_, err = u.db.Exec(`UPDATE users SET stripe_customer_id = ? WHERE ID = ?`, customer.ID, u.UserID)
+	_, err = u.db.Exec(`UPDATE users SET stripe_customer_id = ? WHERE ID = ?`, thisCustomer.ID, u.UserID)
 	if err != nil {
-		return errors.Wrapf(err, "Created stripe customer with id %q but could not allocate to userID %v", customer.ID, u.UserID)
+		return errors.Wrapf(err, "Created stripe customer with id %q but could not allocate to userID %v", thisCustomer.ID, u.UserID)
 	}
 	return nil
 }
@@ -159,22 +159,22 @@ func (u *User) StripeCustomer() (*stripe.Customer, error) {
 	if u.StripeCustomerID == "" {
 		return nil, nil
 	}
-	customer, err := customer.Get(u.StripeCustomerID, nil)
-	return customer, errors.Wrapf(err, "could not get stripe customer id %q", u.StripeCustomerID)
+	thisCustomer, err := customer.Get(u.StripeCustomerID, nil)
+	return thisCustomer, errors.Wrapf(err, "could not get stripe thisCustomer id %q", u.StripeCustomerID)
 }
 
 // ProcessStripeCoupon adds a couponID to a stripe customer.
 func (u *User) ProcessStripeCoupon(couponID string) error {
-	coupon, err := coupon.Get(couponID, nil)
+	thisCoupon, err := coupon.Get(couponID, nil)
 	if err != nil {
 		return err
 	}
-	if !coupon.Valid {
-		return errors.New("coupon does not exist")
+	if !thisCoupon.Valid {
+		return errors.New("thisCoupon does not exist")
 	}
 
 	customerParams := &stripe.CustomerParams{
-		Coupon: couponID,
+		Coupon: &couponID,
 	}
 	_, err = customer.Update(u.StripeCustomerID, customerParams)
 	return err
@@ -192,7 +192,7 @@ func (u *User) StripeUpcomingInvoice() (*Invoice, error) {
 	if u.StripeCustomerID == "" {
 		return nil, nil
 	}
-	invoice, err := invoice.GetNext(&stripe.InvoiceParams{Customer: u.StripeCustomerID})
+	thisInvoice, err := invoice.GetNext(&stripe.InvoiceParams{Customer: &u.StripeCustomerID})
 	if err != nil {
 		if serr, ok := err.(*stripe.Error); ok && serr.HTTPStatusCode == http.StatusNotFound {
 			return nil, nil
@@ -200,8 +200,8 @@ func (u *User) StripeUpcomingInvoice() (*Invoice, error) {
 		return nil, err
 	}
 	return &Invoice{
-		AmountDisplay: amountString(invoice.Currency, invoice.Amount),
-		DueDate:       time.Unix(invoice.Date, 0),
+		AmountDisplay: amountString(thisInvoice.Currency, thisInvoice.AmountDue),
+		DueDate:       time.Unix(thisInvoice.Date, 0),
 	}, nil
 }
 
@@ -218,7 +218,7 @@ type Subscription struct {
 	// EndedAt is the date the subscription finally ended (it may have been
 	// cancelled and ended at the period end).
 	EndedAt time.Time
-	// Ended is whether the subcription is currently active (it maybe cancelled,
+	// Ended is whether the subscription is currently active (it maybe cancelled,
 	// but not currently ended).
 	Ended bool
 }
@@ -249,10 +249,10 @@ func (u *User) StripeDiscount(customer *stripe.Customer) *Discount {
 	}
 
 	switch {
-	case customer.Discount.Coupon.Percent > 0:
-		discount.Description = fmt.Sprintf("%d%% off", customer.Discount.Coupon.Percent)
-	case customer.Discount.Coupon.Amount > 0:
-		discount.Description = fmt.Sprintf("%d%% off", customer.Discount.Coupon.Percent)
+	case customer.Discount.Coupon.PercentOff > 0:
+		discount.Description = fmt.Sprintf("%d%% off", customer.Discount.Coupon.PercentOff)
+	case customer.Discount.Coupon.AmountOff > 0:
+		discount.Description = fmt.Sprintf("%d off", customer.Discount.Coupon.AmountOff)
 	}
 
 	switch customer.Discount.Coupon.Duration {
@@ -271,29 +271,29 @@ func (u *User) StripeDiscount(customer *stripe.Customer) *Discount {
 // both current and previous subscriptions are returned.
 func (u *User) StripeSubscriptions(customer *stripe.Customer) []Subscription {
 	var subs []Subscription
-	if customer.Subs == nil {
+	if customer.Subscriptions.Data == nil {
 		return nil
 	}
-	for _, sub := range customer.Subs.Values {
+	for _, thisSubscription := range customer.Subscriptions.Data {
 		s := Subscription{
-			ID:            sub.ID,
-			Name:          sub.Plan.Name,
-			AmountDisplay: amountString(sub.Plan.Currency, int64(sub.Plan.Amount)),
-			AmountCents:   uint(sub.Plan.Amount),
-			Interval:      string(sub.Plan.Interval),
-			Ended:         sub.EndCancel,
+			ID:            thisSubscription.ID,
+			Name:          thisSubscription.Plan.Nickname,
+			AmountDisplay: amountString(thisSubscription.Plan.Currency, int64(thisSubscription.Plan.Amount)),
+			AmountCents:   uint(thisSubscription.Plan.Amount),
+			Interval:      string(thisSubscription.Plan.Interval),
+			Ended:         thisSubscription.EndedAt > 0,
 		}
-		if sub.Start > 0 {
-			s.StartedAt = time.Unix(sub.Start, 0)
+		if thisSubscription.Start > 0 {
+			s.StartedAt = time.Unix(thisSubscription.Start, 0)
 		}
-		if sub.PeriodEnd > 0 {
-			s.PeriodEndAt = time.Unix(sub.PeriodEnd, 0)
+		if thisSubscription.CurrentPeriodEnd > 0 {
+			s.PeriodEndAt = time.Unix(thisSubscription.CurrentPeriodEnd, 0)
 		}
-		if sub.Canceled > 0 {
-			s.CancelledAt = time.Unix(sub.Canceled, 0)
+		if thisSubscription.CanceledAt > 0 {
+			s.CancelledAt = time.Unix(thisSubscription.CanceledAt, 0)
 		}
-		if sub.Ended > 0 {
-			s.EndedAt = time.Unix(sub.Ended, 0)
+		if thisSubscription.EndedAt > 0 {
+			s.EndedAt = time.Unix(thisSubscription.EndedAt, 0)
 		}
 		subs = append(subs, s)
 	}
