@@ -3,9 +3,9 @@ package users
 import (
 	"golang.org/x/oauth2"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
-	stripe "github.com/stripe/stripe-go"
+	"github.com/sirupsen/logrus"
+	"github.com/stripe/stripe-go"
 
 	ghoauth "golang.org/x/oauth2/github"
 )

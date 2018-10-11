@@ -3,10 +3,10 @@ package commands
 import (
 	"database/sql"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
-	migrate "github.com/rubenv/sql-migrate"
-	stripe "github.com/stripe/stripe-go"
+	"github.com/rubenv/sql-migrate"
+	"github.com/sirupsen/logrus"
+	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/customer"
 )
 
@@ -40,7 +40,7 @@ func (c *Command) Migrate(db *sql.DB, driver string, direction migrate.Migration
 	}
 }
 
-// BillingCheck checks stripe billing for descrepencies.
+// BillingCheck checks stripe billing for discrepancies.
 func (c *Command) BillingCheck(stripeSecretKey string) {
 	stripe.Key = stripeSecretKey
 	stripe.LogLevel = 1
@@ -49,17 +49,17 @@ func (c *Command) BillingCheck(stripeSecretKey string) {
 	{
 		customers := customer.List(nil)
 		for customers.Next() {
-			customer := customers.Customer()
+			thisCustomer := customers.Customer()
 
 			var hasValidSubscription bool
-			for _, sub := range customer.Subs.Values {
+			for _, sub := range thisCustomer.Subscriptions.Data {
 				if sub.EndCancel {
 					// not active
 					continue
 				}
 				// active
 				if hasValidSubscription {
-					c.logger.Warnf("customer %q has multiple valid subscriptions", customer.ID)
+					c.logger.Warnf("customer %q has multiple valid subscriptions", thisCustomer.ID)
 					break
 				}
 				hasValidSubscription = true
@@ -76,10 +76,10 @@ func (c *Command) BillingCheck(stripeSecretKey string) {
 
 		customers := customer.List(nil)
 		for customers.Next() {
-			customer := customers.Customer()
+			thisCustomer := customers.Customer()
 
 			var hasValidSubscription bool
-			for _, sub := range customer.Subs.Values {
+			for _, sub := range thisCustomer.Subscriptions.Data {
 				if !sub.EndCancel {
 					hasValidSubscription = true
 				}
@@ -88,10 +88,10 @@ func (c *Command) BillingCheck(stripeSecretKey string) {
 				continue
 			}
 
-			if seenCustomerID := seenUserIDs[customer.Meta["userID"]]; seenCustomerID != "" {
-				c.logger.Warnf("userID %q has customerID %q and %q", customer.Meta["userID"], seenCustomerID, customer.ID)
+			if seenCustomerID := seenUserIDs[thisCustomer.Metadata["userID"]]; seenCustomerID != "" {
+				c.logger.Warnf("userID %q has customerID %q and %q", thisCustomer.Metadata["userID"], seenCustomerID, thisCustomer.ID)
 			}
-			seenUserIDs[customer.Meta["userID"]] = customer.ID
+			seenUserIDs[thisCustomer.Metadata["userID"]] = thisCustomer.ID
 		}
 		if err := customers.Err(); err != nil {
 			c.logger.WithError(err).Fatal("could not get customer list for multiple customers same userID check")

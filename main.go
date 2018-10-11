@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/bradleyfalzon/gopherci-web/internal/commands"
 	"github.com/bradleyfalzon/gopherci-web/internal/gopherci"
 	"github.com/bradleyfalzon/gopherci-web/internal/users"
@@ -17,7 +17,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/pressly/chi"
 	"github.com/pressly/chi/middleware"
-	migrate "github.com/rubenv/sql-migrate"
+	"github.com/rubenv/sql-migrate"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -94,7 +95,7 @@ func main() {
 	r.Use(middleware.NoCache)
 	r.Use(SessionMiddleware)
 	workDir, _ := os.Getwd()
-	r.FileServer("/static", http.Dir(filepath.Join(workDir, "static")))
+	FileServer(r, "/static", http.Dir(filepath.Join(workDir, "static")))
 	r.NotFound(notFoundHandler)
 
 	r.Get("/", homeHandler)
@@ -125,4 +126,23 @@ func main() {
 
 	logger.Println("Listening on", listen)
 	logger.Fatal(http.ListenAndServe(listen, r))
+}
+
+// Stolen from https://github.com/go-chi/chi/blob/18d990c0d1c023b05a3652d322ae36d8bdb62e07/_examples/fileserver/main.go
+func FileServer(r chi.Router, path string, root http.FileSystem) {
+	if strings.ContainsAny(path, "{}*") {
+		panic("FileServer does not permit URL parameters.")
+	}
+
+	fs := http.StripPrefix(path, http.FileServer(root))
+
+	if path != "/" && path[len(path)-1] != '/' {
+		r.Get(path, http.RedirectHandler(path+"/", 301).ServeHTTP)
+		path += "/"
+	}
+	path += "*"
+
+	r.Get(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fs.ServeHTTP(w, r)
+	}))
 }
